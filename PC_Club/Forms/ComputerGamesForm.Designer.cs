@@ -37,6 +37,7 @@
             this.ClientSize = new System.Drawing.Size(1122, 679);
             this.Name = "ComputerGamesForm";
             this.Text = "Ігри на ПК";
+            this.Load += new System.EventHandler(this.ComputerGamesForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
