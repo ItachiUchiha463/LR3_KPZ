@@ -98,5 +98,15 @@ namespace PC_Club
                 t.Rows.Add(r["game_id"], r["title"]);
             return t;
         }
+
+        public static DataTable ComputerStatuses()
+        {
+            var t = new DataTable();
+            t.Columns.Add("id", typeof(string));
+            t.Columns.Add("text", typeof(string));
+            t.Rows.Add("Справний", "Справний");
+            t.Rows.Add("Несправний", "Несправний");
+            return t;
+        }
     }
 }

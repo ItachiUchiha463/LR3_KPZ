@@ -700,7 +700,7 @@ SELECT user_id, role_id, login, password_hash FROM UserAccount WHERE (user_id = 
                 </xs:simpleType>
               </xs:element>
               <xs:element name="monitor_hz" msprop:Generator_ColumnPropNameInTable="monitor_hzColumn" msprop:Generator_ColumnPropNameInRow="monitor_hz" msprop:Generator_UserColumnName="monitor_hz" msprop:Generator_ColumnVarNameInTable="columnmonitor_hz" type="xs:int" minOccurs="0" />
-              <xs:element name="status" msprop:Generator_ColumnPropNameInTable="statusColumn" msprop:Generator_ColumnPropNameInRow="status" msprop:Generator_UserColumnName="status" msprop:Generator_ColumnVarNameInTable="columnstatus" default="Вільний">
+              <xs:element name="status" msprop:Generator_ColumnPropNameInTable="statusColumn" msprop:Generator_ColumnPropNameInRow="status" msprop:Generator_UserColumnName="status" msprop:Generator_ColumnVarNameInTable="columnstatus" default="Справний">
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:maxLength value="20" />

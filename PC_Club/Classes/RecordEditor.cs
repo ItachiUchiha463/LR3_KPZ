@@ -183,7 +183,7 @@ namespace PC_Club.Forms
                 object id = lookup.Rows[i]["id"];
                 if (id == DBNull.Value && value == DBNull.Value) return i;
                 if (id != DBNull.Value && value != DBNull.Value &&
-                    Convert.ToInt32(id) == Convert.ToInt32(value)) return i;
+                    Convert.ToString(id) == Convert.ToString(value)) return i;
             }
             return -1;
         }

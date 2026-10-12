@@ -1,10 +1,10 @@
-﻿/* Скрипт 4 з 4. Запити (22 + вхід + шапка клієнта)
+﻿/* Скрипт 4 з 4. Запити (20 + вхід + шапка клієнта)
 
    Кожен запит у своєму блоці між GO: виділи блок і натисни F5, щоб перевірити.
    Рядки DECLARE задають тестові значення параметрів; у програмі ці значення
    прийдуть з полів форми як параметри SqlCommand (@назва), тож текст після DECLARE
    переноситься в C# без змін.
-   Запити на дію (M6, M7, A8, A9) обгорнуто в BEGIN TRAN ... ROLLBACK лише для
+   Запити на дію (M7, A8, A9) обгорнуто в BEGIN TRAN ... ROLLBACK лише для
    перевірки: вони показують результат, але нічого не змінюють у базі. */
 
 USE PCClub;
@@ -62,7 +62,7 @@ ORDER BY hall, number;
 GO
 
 -- U2. Де можна пограти в гру
--- Параметр: частина назви гри. Конструкції: JOIN 4 таблиць, LIKE, CASE, підзапит EXISTS
+-- Параметр: частина назви гри або жанру. Конструкції: JOIN 5 таблиць, LIKE, OR, CASE, підзапит EXISTS
 DECLARE @game NVARCHAR(100) = N'Dota';
 SELECT g.title  AS [Гра],
        h.name   AS [Зал],
@@ -78,7 +78,9 @@ FROM Game g
 JOIN ComputerGame cg ON cg.game_id = g.game_id
 JOIN Computer c      ON c.computer_id = cg.computer_id
 JOIN Hall h          ON h.hall_id = c.hall_id
+JOIN Genre ge        ON ge.genre_id = g.genre_id
 WHERE g.title LIKE N'%' + @game + N'%'
+   OR ge.name LIKE N'%' + @game + N'%'
 ORDER BY g.title, h.name, c.number;
 GO
 
@@ -170,26 +172,6 @@ FROM v_ActiveSessions
 ORDER BY started_at;
 GO
 
--- M2. Пошук клієнта за прізвищем, іменем або телефоном
--- Конструкції: LIKE, OR, LEFT JOIN, підзапити (кількість сесій, останній візит)
-DECLARE @text NVARCHAR(50) = N'Кова';
-SELECT c.client_id   AS [Код],
-       c.last_name   AS [Прізвище],
-       c.first_name  AS [Ім'я],
-       c.phone       AS [Телефон],
-       ua.login      AS [Логін],
-       c.balance     AS [Баланс, грн],
-       c.registered_at AS [Зареєстрований],
-       (SELECT COUNT(*) FROM Session s WHERE s.client_id = c.client_id)        AS [Сесій],
-       (SELECT MAX(s.started_at) FROM Session s WHERE s.client_id = c.client_id) AS [Останній візит]
-FROM Client c
-LEFT JOIN UserAccount ua ON ua.user_id = c.user_id
-WHERE c.last_name  LIKE N'%' + @text + N'%'
-   OR c.first_name LIKE N'%' + @text + N'%'
-   OR c.phone      LIKE N'%' + @text + N'%'
-ORDER BY c.last_name, c.first_name;
-GO
-
 -- M3. Клієнти з балансом нижче заданого
 -- Цей запит додається в ClientTableAdapter як FillByLowBalance (другий механізм з методички),
 -- тому він повертає ВСІ колонки таблиці Client у тому ж порядку, що й основний запит адаптера.
@@ -240,21 +222,6 @@ WHERE d.paid_at >= @from
   AND (@employee_id = 0 OR d.employee_id = @employee_id)
 GROUP BY e.last_name, e.first_name, d.method
 ORDER BY [Працівник], [Спосіб оплати];
-GO
-
--- M6. Змінити статус комп'ютера (запит на дію: UPDATE)
--- Параметри: комп'ютер, новий статус. Зробити «Вільним» ПК з відкритою сесією не можна.
-DECLARE @computer_id INT = 1, @status NVARCHAR(20) = N'Несправний';
-BEGIN TRAN;   -- лише для перевірки в SSMS
-UPDATE Computer
-SET status = @status
-WHERE computer_id = @computer_id
-  AND (@status <> N'Вільний'
-       OR NOT EXISTS (SELECT 1 FROM Session s
-                      WHERE s.computer_id = @computer_id AND s.ended_at IS NULL));
-SELECT @@ROWCOUNT AS [Змінено записів];   -- 0 означає: умова не дозволила зміну
-SELECT computer_id, number, status FROM Computer WHERE computer_id = @computer_id;
-ROLLBACK;
 GO
 
 -- M7. Швидка реєстрація клієнта разом з обліковим записом (запит на дію: INSERT)

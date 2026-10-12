@@ -1339,7 +1339,7 @@ namespace PC_Club {
                 this.columnnumber.AllowDBNull = false;
                 this.columngpu.MaxLength = 50;
                 this.columnstatus.AllowDBNull = false;
-                this.columnstatus.DefaultValue = ((string)("Вільний"));
+                this.columnstatus.DefaultValue = ((string)("Справний"));
                 this.columnstatus.MaxLength = 20;
             }
             

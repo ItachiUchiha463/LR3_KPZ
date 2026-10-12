@@ -22,6 +22,7 @@ namespace PC_Club.Forms
             adapter.Fill(ds.Computer);
             Bind(ds.Computer, () => adapter.Update(ds.Computer));
             AddLookup("hall_id", Lookups.Halls(), "Зал");
+            AddLookup("status", Lookups.ComputerStatuses(), "Статус");
         }
     }
 }

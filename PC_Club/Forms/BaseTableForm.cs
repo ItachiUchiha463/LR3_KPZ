@@ -122,10 +122,10 @@ namespace PC_Club.Forms
         {
             foreach (var pair in _lookups)
             {
-                var map = new Dictionary<int, string>();
+                var map = new Dictionary<string, string>();
                 foreach (DataRow r in pair.Value.Rows)
                     if (r["id"] != DBNull.Value)
-                        map[Convert.ToInt32(r["id"])] = Convert.ToString(r["text"]);
+                        map[Convert.ToString(r["id"])] = Convert.ToString(r["text"]);
 
                 string fk = pair.Key;
                 string tc = _textCols[fk];
@@ -136,7 +136,7 @@ namespace PC_Club.Forms
 
                     string s = "";
                     if (row[fk] != DBNull.Value)
-                        map.TryGetValue(Convert.ToInt32(row[fk]), out s);
+                        map.TryGetValue(Convert.ToString(row[fk]), out s);
                     row[tc] = s ?? "";
                 }
             }

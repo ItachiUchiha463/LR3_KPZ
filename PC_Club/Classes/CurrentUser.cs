@@ -86,18 +86,13 @@ namespace PC_Club
             }
         }
 
-        // Що бачить клієнт
-        private static readonly string[] UserForms =
-            { "ComputersForm", "HallsForm", "GamesForm", "GenresForm", "TariffsForm", "ComputerGamesForm" };
-
         // Що редагує менеджер
         private static readonly string[] ManagerEdit =
             { "ClientsForm", "SessionsForm", "DepositsForm" };
 
         public static bool CanOpen(string form)
         {
-            if (Role == UserRole.User) return UserForms.Contains(form);
-            return true;
+            return Role != UserRole.User;
         }
 
         public static bool CanEdit(string form)

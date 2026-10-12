@@ -163,8 +163,8 @@ ORDER BY hall, number;"
                 {
                     Code = "U2", Roles = Everyone,
                     Title = "Де пограти в гру",
-                    Description = "Комп'ютери, на яких встановлена гра, і їхній стан зараз. Можна ввести частину назви.",
-                    Params = { Txt("game", "Назва гри") },
+                    Description = "Комп'ютери, на яких встановлена гра, і їхній стан зараз. Можна ввести частину назви гри або жанру.",
+                    Params = { Txt("game", "Назва гри або жанр") },
                     Sql = @"
 SELECT g.title  AS [Гра],
        h.name   AS [Зал],
@@ -180,7 +180,9 @@ FROM Game g
 JOIN ComputerGame cg ON cg.game_id = g.game_id
 JOIN Computer c      ON c.computer_id = cg.computer_id
 JOIN Hall h          ON h.hall_id = c.hall_id
+JOIN Genre ge        ON ge.genre_id = g.genre_id
 WHERE g.title LIKE N'%' + @game + N'%'
+   OR ge.name LIKE N'%' + @game + N'%'
 ORDER BY g.title, h.name, c.number;"
                 },
 
@@ -297,30 +299,6 @@ ORDER BY started_at;"
 
                 new QueryDef
                 {
-                    Code = "M2", Roles = Staff,
-                    Title = "Пошук клієнта",
-                    Description = "Пошук за частиною прізвища, імені або телефону.",
-                    Params = { Txt("text", "Прізвище, ім'я або телефон") },
-                    Sql = @"
-SELECT c.client_id     AS [Код],
-       c.last_name     AS [Прізвище],
-       c.first_name    AS [Ім'я],
-       c.phone         AS [Телефон],
-       ua.login        AS [Логін],
-       c.balance       AS [Баланс, грн],
-       c.registered_at AS [Зареєстрований],
-       (SELECT COUNT(*) FROM Session s WHERE s.client_id = c.client_id)          AS [Сесій],
-       (SELECT MAX(s.started_at) FROM Session s WHERE s.client_id = c.client_id) AS [Останній візит]
-FROM Client c
-LEFT JOIN UserAccount ua ON ua.user_id = c.user_id
-WHERE c.last_name  LIKE N'%' + @text + N'%'
-   OR c.first_name LIKE N'%' + @text + N'%'
-   OR c.phone      LIKE N'%' + @text + N'%'
-ORDER BY c.last_name, c.first_name;"
-                },
-
-                new QueryDef
-                {
                     Code = "M3", Roles = Staff,
                     Title = "Клієнти з низьким балансом",
                     Description = "Клієнти, у яких на балансі менше заданої суми: кому варто запропонувати поповнення.",
@@ -387,32 +365,6 @@ WHERE d.paid_at >= @from
   AND (@employee_id = 0 OR d.employee_id = @employee_id)
 GROUP BY e.last_name, e.first_name, d.method
 ORDER BY [Працівник], [Спосіб оплати];"
-                },
-
-                new QueryDef
-                {
-                    Code = "M6", Roles = Staff, IsAction = true, AutoRun = false,
-                    Title = "Змінити статус комп'ютера",
-                    Description = "UPDATE: позначити комп'ютер вільним, зайнятим або несправним. Зробити вільним комп'ютер з відкритою сесією не можна.",
-                    Params =
-                    {
-                        Look("computer_id", "Комп'ютер", Lookups.Computers, false),
-                        Choice("status", "Новий статус", "Вільний", "Зайнятий", "Несправний")
-                    },
-                    ConfirmText = "Змінити статус вибраного комп'ютера?",
-                    ZeroText = "Статус не змінено: на цьому комп'ютері зараз відкрита сесія.",
-                    Sql = @"
-UPDATE Computer
-SET status = @status
-WHERE computer_id = @computer_id
-  AND (@status <> N'Вільний'
-       OR NOT EXISTS (SELECT 1 FROM Session s
-                      WHERE s.computer_id = @computer_id AND s.ended_at IS NULL));",
-                    ResultSql = @"
-SELECT h.name AS [Зал], c.number AS [Номер], c.gpu AS [Відеокарта], c.status AS [Статус]
-FROM Computer c
-JOIN Hall h ON h.hall_id = c.hall_id
-WHERE c.computer_id = @computer_id;"
                 },
 
                 new QueryDef
