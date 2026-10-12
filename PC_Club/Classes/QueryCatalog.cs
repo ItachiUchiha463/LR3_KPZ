@@ -105,30 +105,6 @@ namespace PC_Club
             };
         }
 
-        private static QueryParam Choice(string name, string caption, params string[] choices)
-        {
-            return new QueryParam
-            {
-                Name = name,
-                Caption = caption,
-                Kind = ParamKind.Choice,
-                Choices = choices,
-                Width = 130
-            };
-        }
-
-        private static QueryParam Op(string name, string caption, string def)
-        {
-            return new QueryParam
-            {
-                Name = name,
-                Caption = caption,
-                Kind = ParamKind.Operator,
-                Default = () => def,
-                Width = 60
-            };
-        }
-
         private static QueryParam CurrentClient()
         {
             return new QueryParam { Name = "client_id", Caption = "Клієнт", Kind = ParamKind.CurrentClient };
@@ -160,9 +136,9 @@ ORDER BY hall, number;"
                 {
                     Code = "U2", Roles = Everyone,
                     Title = "Де пограти в гру",
-                    Params = { Txt("game", "Назва гри або жанр") },
                     Sql = @"
 SELECT g.title  AS [Гра],
+       ge.name  AS [Жанр],
        h.name   AS [Зал],
        c.number AS [Номер ПК],
        c.gpu    AS [Відеокарта],
@@ -177,8 +153,6 @@ JOIN ComputerGame cg ON cg.game_id = g.game_id
 JOIN Computer c      ON c.computer_id = cg.computer_id
 JOIN Hall h          ON h.hall_id = c.hall_id
 JOIN Genre ge        ON ge.genre_id = g.genre_id
-WHERE g.title LIKE N'%' + @game + N'%'
-   OR ge.name LIKE N'%' + @game + N'%'
 ORDER BY g.title, h.name, c.number;"
                 },
 
@@ -186,12 +160,6 @@ ORDER BY g.title, h.name, c.number;"
                 {
                     Code = "U3", Roles = Everyone,
                     Title = "Каталог ігор",
-                    Params =
-                    {
-                        Look("genre_id", "Жанр", Lookups.Genres, true),
-                        Op("op", "Вік", "<="),
-                        Int("age", "років", 16, 0, 21)
-                    },
                     Sql = @"
 SELECT g.title     AS [Гра],
        ge.name     AS [Жанр],
@@ -199,8 +167,6 @@ SELECT g.title     AS [Гра],
        (SELECT COUNT(*) FROM ComputerGame cg WHERE cg.game_id = g.game_id) AS [Встановлено на ПК]
 FROM Game g
 JOIN Genre ge ON ge.genre_id = g.genre_id
-WHERE (@genre_id = 0 OR g.genre_id = @genre_id)
-  AND g.age_limit {op} @age
 ORDER BY ge.name, g.title;"
                 },
 

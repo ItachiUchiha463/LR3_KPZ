@@ -14,21 +14,18 @@ namespace PC_Club
         OptionalDate,   // DateTimePicker з галочкою (без галочки передається NULL)
         Phone,          // MaskedTextBox з маскою телефону, передаються лише цифри
         Lookup,         // ComboBox зі списку id / text (клієнти, зали, ...)
-        Choice,         // ComboBox з фіксованим набором текстових значень
-        Operator,       // ComboBox з оператором порівняння; підставляється в текст запиту як {name}
         CurrentClient   // поля немає: береться код клієнта, який увійшов
     }
 
     // Один параметр запиту
     public class QueryParam
     {
-        public string Name;              // ім'я параметра в SQL без @ (для Operator: ім'я заглушки {name})
+        public string Name;              // ім'я параметра в SQL без @
         public string Caption;           // підпис над полем
         public ParamKind Kind;
         public Func<object> Default;     // значення за замовчуванням (може бути null)
         public Func<DataTable> Source;   // для Lookup: таблиця з колонками id і text
         public bool AllOption;           // для Lookup: додати першим пункт «Усі» з кодом 0
-        public string[] Choices;         // для Choice
         public decimal Min = 0;          // для Int і Decimal
         public decimal Max = 100000;
         public bool Required = true;     // для Text, Phone, Lookup: чи можна лишити порожнім
@@ -51,7 +48,6 @@ namespace PC_Club
         public string PreviewSql;        // що буде змінено: показується до виконання
         public string ConfirmText;       // {0} = кількість рядків попереднього перегляду
         public string SuccessText;       // {0} = змінено записів, {1} = кількість рядків попереднього перегляду
-        public string ZeroText;          // повідомлення, якщо не змінено жодного запису
         public string ResultSql;         // що показати після виконання
     }
 }

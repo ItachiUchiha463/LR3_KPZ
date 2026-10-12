@@ -59,10 +59,10 @@ FROM v_FreeComputers
 ORDER BY hall, number;
 GO
 
--- U2. Де можна пограти в гру
--- Параметр: частина назви гри або жанру. Конструкції: JOIN 5 таблиць, LIKE, OR, CASE, підзапит EXISTS
-DECLARE @game NVARCHAR(100) = N'Dota';
+-- U2. Де можна пограти в гру: усі ігри на всіх ПК і стан ПК зараз
+-- Конструкції: JOIN 5 таблиць, CASE, підзапит EXISTS
 SELECT g.title  AS [Гра],
+       ge.name  AS [Жанр],
        h.name   AS [Зал],
        c.number AS [Номер ПК],
        c.gpu    AS [Відеокарта],
@@ -77,25 +77,17 @@ JOIN ComputerGame cg ON cg.game_id = g.game_id
 JOIN Computer c      ON c.computer_id = cg.computer_id
 JOIN Hall h          ON h.hall_id = c.hall_id
 JOIN Genre ge        ON ge.genre_id = g.genre_id
-WHERE g.title LIKE N'%' + @game + N'%'
-   OR ge.name LIKE N'%' + @game + N'%'
 ORDER BY g.title, h.name, c.number;
 GO
 
--- U3. Каталог ігор (як у методичці: оператор порівняння вибирається зі списку)
--- Параметри: жанр (0 = усі), оператор для віку, вік.
--- Оператор не можна передати параметром: у програмі він підставляється в текст
--- ЛИШЕ зі списку дозволених (=, <, >, <=, >=, <>). Тут для прикладу <=.
--- Конструкції: WHERE з операторами порівняння й AND, підзапит, ORDER BY
-DECLARE @genre_id INT = 0, @age INT = 16;
+-- U3. Каталог ігор: жанр, вікове обмеження і на скількох ПК встановлена гра
+-- Конструкції: JOIN, підзапит у SELECT, ORDER BY
 SELECT g.title       AS [Гра],
        ge.name       AS [Жанр],
        g.age_limit   AS [Вікове обмеження],
        (SELECT COUNT(*) FROM ComputerGame cg WHERE cg.game_id = g.game_id) AS [Встановлено на ПК]
 FROM Game g
 JOIN Genre ge ON ge.genre_id = g.genre_id
-WHERE (@genre_id = 0 OR g.genre_id = @genre_id)
-  AND g.age_limit <= @age
 ORDER BY ge.name, g.title;
 GO
 

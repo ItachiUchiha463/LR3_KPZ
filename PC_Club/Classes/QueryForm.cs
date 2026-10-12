@@ -12,9 +12,6 @@ namespace PC_Club.Forms
     // запит виконується через SqlCommand з параметрами, результат показується в DataGridView
     public class QueryForm : Form
     {
-        // Дозволені оператори порівняння: лише вони можуть потрапити в текст запиту
-        private static readonly string[] Operators = { "=", "<", ">", "<=", ">=", "<>" };
-
         private readonly QueryDef _q;
         private readonly Dictionary<string, Control> _inputs = new Dictionary<string, Control>();
         private readonly List<Action> _lookupDefaults = new List<Action>();
@@ -211,23 +208,6 @@ namespace PC_Club.Forms
                         return combo;
                     }
 
-                case ParamKind.Choice:
-                    {
-                        var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-                        combo.Items.AddRange(p.Choices);
-                        combo.SelectedIndex = 0;
-                        if (def != null) combo.SelectedItem = Convert.ToString(def);
-                        return combo;
-                    }
-
-                case ParamKind.Operator:
-                    {
-                        var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-                        combo.Items.AddRange(Operators);
-                        combo.SelectedItem = def != null ? Convert.ToString(def) : "=";
-                        return combo;
-                    }
-
                 default:
                     return new TextBox { Text = def != null ? Convert.ToString(def) : "" };
             }
@@ -275,11 +255,9 @@ namespace PC_Club.Forms
             return false;
         }
 
-        // values: ім'я параметра → значення; ops: ім'я заглушки → оператор
-        private bool Collect(out Dictionary<string, object> values, out Dictionary<string, string> ops)
+        private bool Collect(out Dictionary<string, object> values)
         {
             values = new Dictionary<string, object>();
-            ops = new Dictionary<string, string>();
 
             foreach (QueryParam p in _q.Params)
             {
@@ -353,18 +331,6 @@ namespace PC_Club.Forms
                             break;
                         }
 
-                    case ParamKind.Choice:
-                        values[p.Name] = ((ComboBox)c).Text;
-                        break;
-
-                    case ParamKind.Operator:
-                        {
-                            string op = ((ComboBox)c).Text;
-                            if (!Operators.Contains(op)) return Fail(c, "Виберіть оператор порівняння зі списку.");
-                            ops[p.Name] = op;
-                            break;
-                        }
-
                     default:
                         {
                             string text = c.Text.Trim();
@@ -375,14 +341,6 @@ namespace PC_Club.Forms
                 }
             }
             return true;
-        }
-
-        // Підставляє оператори порівняння замість заглушок {name}
-        private static string Prepare(string sql, Dictionary<string, string> ops)
-        {
-            foreach (var pair in ops)
-                sql = sql.Replace("{" + pair.Key + "}", pair.Value);
-            return sql;
         }
 
         // Нові об'єкти параметрів для кожної команди (один SqlParameter не можна додати у дві команди)
@@ -396,19 +354,18 @@ namespace PC_Club.Forms
         private void Run()
         {
             Dictionary<string, object> values;
-            Dictionary<string, string> ops;
-            if (!Collect(out values, out ops)) return;
+            if (!Collect(out values)) return;
 
             try
             {
                 if (_q.IsAction)
                 {
-                    RunAction(values, ops);
+                    RunAction(values);
                 }
                 else
                 {
                     Cursor = Cursors.WaitCursor;
-                    ShowTable(Db.GetTable(Prepare(_q.Sql, ops), MakeParams(values)));
+                    ShowTable(Db.GetTable(_q.Sql, MakeParams(values)));
                 }
             }
             catch (Exception ex)
@@ -423,13 +380,13 @@ namespace PC_Club.Forms
         }
 
         // INSERT / UPDATE / DELETE: попередній перегляд → підтвердження → виконання → результат
-        private void RunAction(Dictionary<string, object> values, Dictionary<string, string> ops)
+        private void RunAction(Dictionary<string, object> values)
         {
             int previewCount = 0;
 
             if (_q.PreviewSql != null)
             {
-                DataTable preview = Db.GetTable(Prepare(_q.PreviewSql, ops), MakeParams(values));
+                DataTable preview = Db.GetTable(_q.PreviewSql, MakeParams(values));
                 ShowTable(preview);
                 previewCount = preview.Rows.Count;
 
@@ -446,19 +403,16 @@ namespace PC_Club.Forms
                 return;
 
             Cursor = Cursors.WaitCursor;
-            int affected = Db.Execute(Prepare(_q.Sql, ops), MakeParams(values));
+            int affected = Db.Execute(_q.Sql, MakeParams(values));
             Cursor = Cursors.Default;
 
-            if (affected == 0 && _q.ZeroText != null)
-                MessageBox.Show(_q.ZeroText, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            else
-                MessageBox.Show(string.Format(_q.SuccessText ?? "Виконано. Змінено записів: {0}.", affected, previewCount),
-                                Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(string.Format(_q.SuccessText ?? "Виконано. Змінено записів: {0}.", affected, previewCount),
+                            Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             if (_q.ResultSql != null)
-                ShowTable(Db.GetTable(Prepare(_q.ResultSql, ops), MakeParams(values)));
+                ShowTable(Db.GetTable(_q.ResultSql, MakeParams(values)));
             else if (_q.PreviewSql != null)
-                ShowTable(Db.GetTable(Prepare(_q.PreviewSql, ops), MakeParams(values)));
+                ShowTable(Db.GetTable(_q.PreviewSql, MakeParams(values)));
         }
 
         // ---------- Показ результату ----------
