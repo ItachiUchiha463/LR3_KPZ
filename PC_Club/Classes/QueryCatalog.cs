@@ -299,22 +299,6 @@ ORDER BY started_at;"
 
                 new QueryDef
                 {
-                    Code = "M3", Roles = Staff,
-                    Title = "Клієнти з низьким балансом",
-                    Description = "Клієнти, у яких на балансі менше заданої суми: кому варто запропонувати поповнення.",
-                    Params = { Dec("limit", "Баланс менше, грн", 50, 0, 100000) },
-                    // колонки без псевдонімів, бо цей самий запит піде в TableAdapter (етап 7)
-                    CaptionsFrom = "Client",
-                    HiddenColumns = new[] { "user_id" },
-                    Sql = @"
-SELECT client_id, user_id, last_name, first_name, phone, birth_date, registered_at, balance
-FROM Client
-WHERE balance < @limit
-ORDER BY balance, last_name;"
-                },
-
-                new QueryDef
-                {
                     Code = "M4", Roles = Staff,
                     Title = "Рух коштів клієнта",
                     Description = "Поповнення й оплати сесій клієнта в одному списку (об'єднання запитів UNION ALL).",

@@ -437,6 +437,33 @@ namespace PC_Club.Forms
             }
         }
 
+        protected bool Reload(Action fill)
+        {
+            if (!ConfirmLeave()) return false;
+
+            _switching = true;
+            try
+            {
+                fill();
+                FillLookupText();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Errors.Friendly(ex), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            finally
+            {
+                _switching = false;
+            }
+
+            ClearHighlight();
+            lblFound.Text = "";
+            ShowCurrent();
+            UpdateCounter();
+            return true;
+        }
+
         private void UpdateCounter()
         {
             if (_table == null) return;
