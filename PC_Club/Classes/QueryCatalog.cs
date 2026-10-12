@@ -172,7 +172,7 @@ ORDER BY ge.name, g.title;"
 
                 new QueryDef
                 {
-                    Code = "U4", Roles = Everyone,
+                    Code = "U4", Roles = Everyone, ShowFilter = false,
                     Title = "Калькулятор вартості",
                     Sql = @"
 SELECT h.name             AS [Зал],
@@ -189,7 +189,7 @@ ORDER BY h.name, [До сплати, грн];"
 
                 new QueryDef
                 {
-                    Code = "U5", Roles = Everyone,
+                    Code = "U5", Roles = Everyone, ShowFilter = false,
                     Title = "Топ-5 популярних ігор",
                     Params = { Int("days", "За останні днів", 30, 1, 365) },
                     Sql = @"
@@ -228,7 +228,7 @@ ORDER BY started_at DESC;"
 
                 new QueryDef
                 {
-                    Code = "M1", Roles = Staff,
+                    Code = "M1", Roles = Staff, ShowFilter = false,
                     Title = "Хто зараз грає",
                     Sql = @"
 SELECT client        AS [Клієнт],
@@ -247,7 +247,7 @@ ORDER BY started_at;"
 
                 new QueryDef
                 {
-                    Code = "M4", Roles = Staff,
+                    Code = "M4", Roles = Staff, ShowFilter = false,
                     Title = "Рух коштів клієнта",
                     Params = { Look("client_id", "Клієнт", Lookups.Clients, false, null, 230) },
                     AutoRun = false,
@@ -292,7 +292,7 @@ ORDER BY [Працівник], [Спосіб оплати];"
 
                 new QueryDef
                 {
-                    Code = "M7", Roles = Staff, IsAction = true, AutoRun = false,
+                    Code = "M7", Roles = Staff, ShowFilter = false, IsAction = true, AutoRun = false,
                     Title = "Реєстрація клієнта",
                     Params =
                     {
@@ -350,7 +350,7 @@ ORDER BY [Дата];"
 
                 new QueryDef
                 {
-                    Code = "A2", Roles = AdminOnly,
+                    Code = "A2", Roles = AdminOnly, ShowFilter = false,
                     Title = "Виручка по залах",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
@@ -413,7 +413,7 @@ ORDER BY [Витрачено, грн] DESC;"
 
                 new QueryDef
                 {
-                    Code = "A5", Roles = AdminOnly,
+                    Code = "A5", Roles = AdminOnly, ShowFilter = false,
                     Title = "Робота працівників",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
@@ -437,7 +437,7 @@ ORDER BY [Прийнято коштів, грн] DESC;"
 
                 new QueryDef
                 {
-                    Code = "A7", Roles = AdminOnly,
+                    Code = "A7", Roles = AdminOnly, ShowFilter = false,
                     Title = "Виручка залів по днях тижня",
                     Params = { DateP("from", "З", -60), DateP("to", "По", 0) },
                     Sql = @"
@@ -460,7 +460,7 @@ ORDER BY [Разом, грн] DESC;"
 
                 new QueryDef
                 {
-                    Code = "A8", Roles = AdminOnly, IsAction = true, AutoRun = false,
+                    Code = "A8", Roles = AdminOnly, ShowFilter = false, IsAction = true, AutoRun = false,
                     Title = "Змінити ціни залів",
                     Params =
                     {
@@ -487,7 +487,7 @@ ORDER BY name;"
 
                 new QueryDef
                 {
-                    Code = "A9", Roles = AdminOnly, IsAction = true, AutoRun = false,
+                    Code = "A9", Roles = AdminOnly, ShowFilter = false, IsAction = true, AutoRun = false,
                     Title = "Видалити неактивних клієнтів",
                     Params = { Int("days", "Зареєстровані понад днів тому", 180, 1, 3650) },
                     PreviewSql = @"

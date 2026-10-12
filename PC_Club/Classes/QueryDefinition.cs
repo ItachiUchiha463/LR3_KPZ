@@ -42,6 +42,7 @@ namespace PC_Club
         public List<QueryParam> Params = new List<QueryParam>();
 
         public bool AutoRun = true;      // виконати одразу при відкритті форми
+        public bool ShowFilter = true;
 
         // Лише для запитів на дію (INSERT / UPDATE / DELETE)
         public bool IsAction;

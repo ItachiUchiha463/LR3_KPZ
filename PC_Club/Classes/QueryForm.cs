@@ -85,6 +85,13 @@ namespace PC_Club.Forms
             paramsPanel.Controls.Add(_btnRun);
             AcceptButton = _btnRun;
 
+            if (!_q.ShowFilter)
+            {
+                if (_inputs.Count == 0) _btnRun.Margin = new Padding(3);
+                Controls.Add(paramsPanel);
+                return;
+            }
+
             var filterPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
