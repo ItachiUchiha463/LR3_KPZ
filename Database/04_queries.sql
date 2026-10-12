@@ -1,4 +1,4 @@
-﻿/* Скрипт 4 з 4. Запити (20 + вхід + шапка клієнта)
+﻿/* Скрипт 4 з 4. Запити (19 + вхід + шапка клієнта)
 
    Кожен запит у своєму блоці між GO: виділи блок і натисни F5, щоб перевірити.
    Рядки DECLARE задають тестові значення параметрів; у програмі ці значення
@@ -170,17 +170,6 @@ SELECT client        AS [Клієнт],
        CASE WHEN balance < current_price THEN N'Не вистачає' ELSE N'' END AS [Увага]
 FROM v_ActiveSessions
 ORDER BY started_at;
-GO
-
--- M3. Клієнти з балансом нижче заданого
--- Цей запит додається в ClientTableAdapter як FillByLowBalance (другий механізм з методички),
--- тому він повертає ВСІ колонки таблиці Client у тому ж порядку, що й основний запит адаптера.
--- Конструкції: WHERE з параметром, ORDER BY
-DECLARE @limit DECIMAL(8,2) = 50;
-SELECT client_id, user_id, last_name, first_name, phone, birth_date, registered_at, balance
-FROM Client
-WHERE balance < @limit
-ORDER BY balance, last_name;
 GO
 
 -- M4. Рух коштів клієнта: поповнення й оплати сесій в одному списку
