@@ -53,8 +53,8 @@ GO
 SELECT hall           AS [Зал],
        number         AS [Номер],
        gpu            AS [Відеокарта],
-       monitor_hz     AS [Монітор, Гц],
-       price_per_hour AS [Ціна за годину, грн]
+       monitor_hz     AS [Монітор (Гц)],
+       price_per_hour AS [Ціна за годину (грн)]
 FROM v_FreeComputers
 ORDER BY hall, number;
 GO
@@ -96,13 +96,13 @@ GO
 SELECT h.name             AS [Зал],
        t.name             AS [Тариф],
        t.hours            AS [Годин],
-       t.discount_percent AS [Знижка, %],
-       h.price_per_hour * t.hours                                                      AS [Без знижки, грн],
-       CAST(h.price_per_hour * t.hours * (100 - t.discount_percent) / 100.0 AS DECIMAL(8,2)) AS [До сплати, грн],
-       CAST(h.price_per_hour * (100 - t.discount_percent) / 100.0 AS DECIMAL(8,2))           AS [За годину, грн]
+       t.discount_percent AS [Знижка (%)],
+       h.price_per_hour * t.hours                                                      AS [Без знижки (грн)],
+       CAST(h.price_per_hour * t.hours * (100 - t.discount_percent) / 100.0 AS DECIMAL(8,2)) AS [До сплати (грн)],
+       CAST(h.price_per_hour * (100 - t.discount_percent) / 100.0 AS DECIMAL(8,2))           AS [За годину (грн)]
 FROM Hall h
 CROSS JOIN Tariff t
-ORDER BY h.name, [До сплати, грн];
+ORDER BY h.name, [До сплати (грн)];
 GO
 
 -- U5. Топ-5 популярних ігор
@@ -131,7 +131,7 @@ SELECT started_at  AS [Початок],
        tariff      AS [Тариф],
        game        AS [Гра],
        hours       AS [Годин],
-       total_price AS [Сума, грн]
+       total_price AS [Сума (грн)]
 FROM v_SessionDetails
 WHERE client_id = @client_id
 ORDER BY started_at DESC;
@@ -149,9 +149,9 @@ SELECT client        AS [Клієнт],
        game          AS [Гра],
        tariff        AS [Тариф],
        started_at    AS [Початок],
-       minutes       AS [Грає, хв],
-       current_price AS [Набіжало, грн],
-       balance       AS [Баланс, грн],
+       minutes       AS [Грає (хв)],
+       current_price AS [Набіжало (грн)],
+       balance       AS [Баланс (грн)],
        CASE WHEN balance < current_price THEN N'Не вистачає' ELSE N'' END AS [Увага]
 FROM v_ActiveSessions
 ORDER BY started_at;
@@ -163,7 +163,7 @@ DECLARE @client_id INT = 1;
 SELECT d.paid_at  AS [Дата],
        N'Поповнення' AS [Операція],
        d.method   AS [Деталі],
-       d.amount   AS [Сума, грн]
+       d.amount   AS [Сума (грн)]
 FROM Deposit d
 WHERE d.client_id = @client_id
 UNION ALL
@@ -187,7 +187,7 @@ DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST
 SELECT e.last_name + N' ' + e.first_name AS [Працівник],
        d.method        AS [Спосіб оплати],
        COUNT(*)        AS [Поповнень],
-       SUM(d.amount)   AS [Сума, грн]
+       SUM(d.amount)   AS [Сума (грн)]
 FROM Deposit d
 JOIN Employee e ON e.employee_id = d.employee_id
 WHERE d.paid_at >= @from
@@ -230,8 +230,8 @@ DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST
 SELECT CAST(ended_at AS DATE)                AS [Дата],
        COUNT(*)                              AS [Сесій],
        SUM(hours)                            AS [Годин],
-       SUM(total_price)                      AS [Виручка, грн],
-       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек, грн]
+       SUM(total_price)                      AS [Виручка (грн)],
+       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек (грн)]
 FROM v_SessionDetails
 WHERE total_price IS NOT NULL
   AND ended_at >= @from
@@ -246,14 +246,14 @@ DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST
 SELECT hall                                   AS [Зал],
        COUNT(*)                               AS [Сесій],
        SUM(hours)                             AS [Годин],
-       SUM(total_price)                       AS [Виручка, грн],
-       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек, грн]
+       SUM(total_price)                       AS [Виручка (грн)],
+       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек (грн)]
 FROM v_SessionDetails
 WHERE total_price IS NOT NULL
   AND ended_at >= @from
   AND ended_at < DATEADD(DAY, 1, @to)
 GROUP BY hall
-ORDER BY [Виручка, грн] DESC;
+ORDER BY [Виручка (грн)] DESC;
 GO
 
 -- A3. Завантаженість комп'ютерів (разом із тими, що не мали жодної сесії)
@@ -265,7 +265,7 @@ SELECT h.name   AS [Зал],
        c.status AS [Статус],
        COUNT(s.session_id) AS [Сесій],
        CAST(ISNULL(SUM(DATEDIFF(MINUTE, s.started_at, ISNULL(s.ended_at, GETDATE()))), 0) / 60.0 AS DECIMAL(10,1)) AS [Годин],
-       ISNULL(SUM(s.total_price), 0) AS [Виручка, грн]
+       ISNULL(SUM(s.total_price), 0) AS [Виручка (грн)]
 FROM Computer c
 JOIN Hall h ON h.hall_id = c.hall_id
 LEFT JOIN Session s ON s.computer_id = c.computer_id
@@ -280,8 +280,8 @@ GO
 SELECT c.last_name + N' ' + c.first_name AS [Клієнт],
        c.phone            AS [Телефон],
        COUNT(*)           AS [Сесій],
-       SUM(s.total_price) AS [Витрачено, грн],
-       c.balance          AS [Баланс, грн]
+       SUM(s.total_price) AS [Витрачено (грн)],
+       c.balance          AS [Баланс (грн)]
 FROM Client c
 JOIN Session s ON s.client_id = c.client_id
 WHERE s.total_price IS NOT NULL
@@ -291,7 +291,7 @@ HAVING SUM(s.total_price) > (SELECT AVG(t.spent)
                                    FROM Session
                                    WHERE total_price IS NOT NULL
                                    GROUP BY client_id) t)
-ORDER BY [Витрачено, грн] DESC;
+ORDER BY [Витрачено (грн)] DESC;
 GO
 
 -- A5. Робота працівників за період: сесії й прийняті кошти
@@ -304,15 +304,15 @@ SELECT e.last_name + N' ' + e.first_name AS [Працівник],
            AND s.started_at >= @from AND s.started_at < DATEADD(DAY, 1, @to)) AS [Відкрито сесій],
        (SELECT ISNULL(SUM(s.total_price), 0) FROM Session s
          WHERE s.employee_id = e.employee_id
-           AND s.started_at >= @from AND s.started_at < DATEADD(DAY, 1, @to)) AS [Сесій на суму, грн],
+           AND s.started_at >= @from AND s.started_at < DATEADD(DAY, 1, @to)) AS [Сесій на суму (грн)],
        (SELECT COUNT(*) FROM Deposit d
          WHERE d.employee_id = e.employee_id
            AND d.paid_at >= @from AND d.paid_at < DATEADD(DAY, 1, @to))      AS [Поповнень],
        (SELECT ISNULL(SUM(d.amount), 0) FROM Deposit d
          WHERE d.employee_id = e.employee_id
-           AND d.paid_at >= @from AND d.paid_at < DATEADD(DAY, 1, @to))      AS [Прийнято коштів, грн]
+           AND d.paid_at >= @from AND d.paid_at < DATEADD(DAY, 1, @to))      AS [Прийнято коштів (грн)]
 FROM Employee e
-ORDER BY [Прийнято коштів, грн] DESC;
+ORDER BY [Прийнято коштів (грн)] DESC;
 GO
 
 -- A7. Виручка залів по днях тижня (перехресний запит: зали в рядках, дні в колонках)
@@ -325,7 +325,7 @@ SELECT hall AS [Зал],
        ISNULL([3], 0) AS [Чт], ISNULL([4], 0) AS [Пт], ISNULL([5], 0) AS [Сб],
        ISNULL([6], 0) AS [Нд],
        ISNULL([0], 0) + ISNULL([1], 0) + ISNULL([2], 0) + ISNULL([3], 0)
-     + ISNULL([4], 0) + ISNULL([5], 0) + ISNULL([6], 0) AS [Разом, грн]
+     + ISNULL([4], 0) + ISNULL([5], 0) + ISNULL([6], 0) AS [Разом (грн)]
 FROM (SELECT hall,
              DATEDIFF(DAY, 0, started_at) % 7 AS dow,
              total_price
@@ -334,7 +334,7 @@ FROM (SELECT hall,
         AND started_at >= @from
         AND started_at < DATEADD(DAY, 1, @to)) src
 PIVOT (SUM(total_price) FOR dow IN ([0], [1], [2], [3], [4], [5], [6])) p
-ORDER BY [Разом, грн] DESC;
+ORDER BY [Разом (грн)] DESC;
 GO
 
 -- A8. Змінити ціни залу на X % (запит на дію: масовий UPDATE з обчисленням)
