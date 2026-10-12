@@ -35,17 +35,18 @@
             this.flowShift = new System.Windows.Forms.FlowLayoutPanel();
             this.btnM1 = new System.Windows.Forms.Button();
             this.btnM4 = new System.Windows.Forms.Button();
-            this.btnM5 = new System.Windows.Forms.Button();
             this.btnM7 = new System.Windows.Forms.Button();
             this.gbAdmin = new System.Windows.Forms.GroupBox();
             this.flowAdmin = new System.Windows.Forms.FlowLayoutPanel();
-            this.btnA1 = new System.Windows.Forms.Button();
-            this.btnA2 = new System.Windows.Forms.Button();
             this.btnA3 = new System.Windows.Forms.Button();
             this.btnA4 = new System.Windows.Forms.Button();
             this.btnA5 = new System.Windows.Forms.Button();
-            this.btnA7 = new System.Windows.Forms.Button();
             this.btnA8 = new System.Windows.Forms.Button();
+            this.gbReports = new System.Windows.Forms.GroupBox();
+            this.flowReports = new System.Windows.Forms.FlowLayoutPanel();
+            this.btnRevenueByDay = new System.Windows.Forms.Button();
+            this.btnRevenueByHall = new System.Windows.Forms.Button();
+            this.btnDepositsByEmployee = new System.Windows.Forms.Button();
             this.gbClub = new System.Windows.Forms.GroupBox();
             this.flowClub = new System.Windows.Forms.FlowLayoutPanel();
             this.btnU1 = new System.Windows.Forms.Button();
@@ -75,6 +76,8 @@
             this.flowShift.SuspendLayout();
             this.gbAdmin.SuspendLayout();
             this.flowAdmin.SuspendLayout();
+            this.gbReports.SuspendLayout();
+            this.flowReports.SuspendLayout();
             this.gbClub.SuspendLayout();
             this.flowClub.SuspendLayout();
             this.gbData.SuspendLayout();
@@ -140,6 +143,7 @@
             this.panelBody.AutoScroll = true;
             this.panelBody.Controls.Add(this.gbData);
             this.panelBody.Controls.Add(this.gbClub);
+            this.panelBody.Controls.Add(this.gbReports);
             this.panelBody.Controls.Add(this.gbAdmin);
             this.panelBody.Controls.Add(this.gbShift);
             this.panelBody.Controls.Add(this.gbState);
@@ -210,7 +214,6 @@
             // 
             this.flowShift.Controls.Add(this.btnM1);
             this.flowShift.Controls.Add(this.btnM4);
-            this.flowShift.Controls.Add(this.btnM5);
             this.flowShift.Controls.Add(this.btnM7);
             this.flowShift.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowShift.Name = "flowShift";
@@ -236,21 +239,11 @@
             this.btnM4.UseVisualStyleBackColor = true;
             this.btnM4.Click += new System.EventHandler(this.OpenByTag_Click);
             // 
-            // btnM5
-            // 
-            this.btnM5.Name = "btnM5";
-            this.btnM5.Size = new System.Drawing.Size(180, 32);
-            this.btnM5.TabIndex = 2;
-            this.btnM5.Tag = "Q:M5";
-            this.btnM5.Text = "Поповнення за період";
-            this.btnM5.UseVisualStyleBackColor = true;
-            this.btnM5.Click += new System.EventHandler(this.OpenByTag_Click);
-            // 
             // btnM7
             // 
             this.btnM7.Name = "btnM7";
             this.btnM7.Size = new System.Drawing.Size(180, 32);
-            this.btnM7.TabIndex = 3;
+            this.btnM7.TabIndex = 2;
             this.btnM7.Tag = "Q:M7";
             this.btnM7.Text = "Реєстрація клієнта";
             this.btnM7.UseVisualStyleBackColor = true;
@@ -261,49 +254,26 @@
             this.gbAdmin.Controls.Add(this.flowAdmin);
             this.gbAdmin.Dock = System.Windows.Forms.DockStyle.Top;
             this.gbAdmin.Name = "gbAdmin";
-            this.gbAdmin.Size = new System.Drawing.Size(760, 108);
+            this.gbAdmin.Size = new System.Drawing.Size(760, 70);
             this.gbAdmin.TabIndex = 2;
             this.gbAdmin.TabStop = false;
             this.gbAdmin.Text = "Адміністрування";
             // 
             // flowAdmin
             // 
-            this.flowAdmin.Controls.Add(this.btnA1);
-            this.flowAdmin.Controls.Add(this.btnA2);
             this.flowAdmin.Controls.Add(this.btnA3);
             this.flowAdmin.Controls.Add(this.btnA4);
             this.flowAdmin.Controls.Add(this.btnA5);
-            this.flowAdmin.Controls.Add(this.btnA7);
             this.flowAdmin.Controls.Add(this.btnA8);
             this.flowAdmin.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowAdmin.Name = "flowAdmin";
             this.flowAdmin.TabIndex = 0;
             // 
-            // btnA1
-            // 
-            this.btnA1.Name = "btnA1";
-            this.btnA1.Size = new System.Drawing.Size(180, 32);
-            this.btnA1.TabIndex = 0;
-            this.btnA1.Tag = "Q:A1";
-            this.btnA1.Text = "Виручка по днях";
-            this.btnA1.UseVisualStyleBackColor = true;
-            this.btnA1.Click += new System.EventHandler(this.OpenByTag_Click);
-            // 
-            // btnA2
-            // 
-            this.btnA2.Name = "btnA2";
-            this.btnA2.Size = new System.Drawing.Size(180, 32);
-            this.btnA2.TabIndex = 1;
-            this.btnA2.Tag = "Q:A2";
-            this.btnA2.Text = "Виручка по залах";
-            this.btnA2.UseVisualStyleBackColor = true;
-            this.btnA2.Click += new System.EventHandler(this.OpenByTag_Click);
-            // 
             // btnA3
             // 
             this.btnA3.Name = "btnA3";
             this.btnA3.Size = new System.Drawing.Size(180, 32);
-            this.btnA3.TabIndex = 2;
+            this.btnA3.TabIndex = 0;
             this.btnA3.Tag = "Q:A3";
             this.btnA3.Text = "Завантаженість ПК";
             this.btnA3.UseVisualStyleBackColor = true;
@@ -313,7 +283,7 @@
             // 
             this.btnA4.Name = "btnA4";
             this.btnA4.Size = new System.Drawing.Size(180, 32);
-            this.btnA4.TabIndex = 3;
+            this.btnA4.TabIndex = 1;
             this.btnA4.Tag = "Q:A4";
             this.btnA4.Text = "Найкращі клієнти";
             this.btnA4.UseVisualStyleBackColor = true;
@@ -323,31 +293,70 @@
             // 
             this.btnA5.Name = "btnA5";
             this.btnA5.Size = new System.Drawing.Size(180, 32);
-            this.btnA5.TabIndex = 4;
+            this.btnA5.TabIndex = 2;
             this.btnA5.Tag = "Q:A5";
             this.btnA5.Text = "Робота працівників";
             this.btnA5.UseVisualStyleBackColor = true;
             this.btnA5.Click += new System.EventHandler(this.OpenByTag_Click);
             // 
-            // btnA7
-            // 
-            this.btnA7.Name = "btnA7";
-            this.btnA7.Size = new System.Drawing.Size(180, 32);
-            this.btnA7.TabIndex = 5;
-            this.btnA7.Tag = "Q:A7";
-            this.btnA7.Text = "Виручка по днях тижня";
-            this.btnA7.UseVisualStyleBackColor = true;
-            this.btnA7.Click += new System.EventHandler(this.OpenByTag_Click);
-            // 
             // btnA8
             // 
             this.btnA8.Name = "btnA8";
             this.btnA8.Size = new System.Drawing.Size(180, 32);
-            this.btnA8.TabIndex = 6;
+            this.btnA8.TabIndex = 3;
             this.btnA8.Tag = "Q:A8";
             this.btnA8.Text = "Змінити ціни залів";
             this.btnA8.UseVisualStyleBackColor = true;
             this.btnA8.Click += new System.EventHandler(this.OpenByTag_Click);
+            // 
+            // gbReports
+            // 
+            this.gbReports.Controls.Add(this.flowReports);
+            this.gbReports.Dock = System.Windows.Forms.DockStyle.Top;
+            this.gbReports.Name = "gbReports";
+            this.gbReports.Size = new System.Drawing.Size(760, 70);
+            this.gbReports.TabIndex = 3;
+            this.gbReports.TabStop = false;
+            this.gbReports.Text = "Звіти";
+            // 
+            // flowReports
+            // 
+            this.flowReports.Controls.Add(this.btnRevenueByDay);
+            this.flowReports.Controls.Add(this.btnRevenueByHall);
+            this.flowReports.Controls.Add(this.btnDepositsByEmployee);
+            this.flowReports.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flowReports.Name = "flowReports";
+            this.flowReports.TabIndex = 0;
+            // 
+            // btnRevenueByDay
+            // 
+            this.btnRevenueByDay.Name = "btnRevenueByDay";
+            this.btnRevenueByDay.Size = new System.Drawing.Size(180, 32);
+            this.btnRevenueByDay.TabIndex = 0;
+            this.btnRevenueByDay.Tag = "R:RevenueByDay";
+            this.btnRevenueByDay.Text = "Виручка за період";
+            this.btnRevenueByDay.UseVisualStyleBackColor = true;
+            this.btnRevenueByDay.Click += new System.EventHandler(this.OpenByTag_Click);
+            // 
+            // btnRevenueByHall
+            // 
+            this.btnRevenueByHall.Name = "btnRevenueByHall";
+            this.btnRevenueByHall.Size = new System.Drawing.Size(180, 32);
+            this.btnRevenueByHall.TabIndex = 1;
+            this.btnRevenueByHall.Tag = "R:RevenueByHall";
+            this.btnRevenueByHall.Text = "Виручка по залах";
+            this.btnRevenueByHall.UseVisualStyleBackColor = true;
+            this.btnRevenueByHall.Click += new System.EventHandler(this.OpenByTag_Click);
+            // 
+            // btnDepositsByEmployee
+            // 
+            this.btnDepositsByEmployee.Name = "btnDepositsByEmployee";
+            this.btnDepositsByEmployee.Size = new System.Drawing.Size(180, 32);
+            this.btnDepositsByEmployee.TabIndex = 2;
+            this.btnDepositsByEmployee.Tag = "R:DepositsByEmployee";
+            this.btnDepositsByEmployee.Text = "Поповнення за період";
+            this.btnDepositsByEmployee.UseVisualStyleBackColor = true;
+            this.btnDepositsByEmployee.Click += new System.EventHandler(this.OpenByTag_Click);
             // 
             // gbClub
             // 
@@ -355,7 +364,7 @@
             this.gbClub.Dock = System.Windows.Forms.DockStyle.Top;
             this.gbClub.Name = "gbClub";
             this.gbClub.Size = new System.Drawing.Size(760, 108);
-            this.gbClub.TabIndex = 3;
+            this.gbClub.TabIndex = 4;
             this.gbClub.TabStop = false;
             this.gbClub.Text = "Клуб";
             // 
@@ -437,7 +446,7 @@
             this.gbData.Dock = System.Windows.Forms.DockStyle.Top;
             this.gbData.Name = "gbData";
             this.gbData.Size = new System.Drawing.Size(760, 146);
-            this.gbData.TabIndex = 4;
+            this.gbData.TabIndex = 5;
             this.gbData.TabStop = false;
             this.gbData.Text = "Дані";
             // 
@@ -583,6 +592,8 @@
             this.flowShift.ResumeLayout(false);
             this.gbAdmin.ResumeLayout(false);
             this.flowAdmin.ResumeLayout(false);
+            this.gbReports.ResumeLayout(false);
+            this.flowReports.ResumeLayout(false);
             this.gbClub.ResumeLayout(false);
             this.flowClub.ResumeLayout(false);
             this.gbData.ResumeLayout(false);
@@ -612,17 +623,18 @@
         private System.Windows.Forms.FlowLayoutPanel flowShift;
         private System.Windows.Forms.Button btnM1;
         private System.Windows.Forms.Button btnM4;
-        private System.Windows.Forms.Button btnM5;
         private System.Windows.Forms.Button btnM7;
         private System.Windows.Forms.GroupBox gbAdmin;
         private System.Windows.Forms.FlowLayoutPanel flowAdmin;
-        private System.Windows.Forms.Button btnA1;
-        private System.Windows.Forms.Button btnA2;
         private System.Windows.Forms.Button btnA3;
         private System.Windows.Forms.Button btnA4;
         private System.Windows.Forms.Button btnA5;
-        private System.Windows.Forms.Button btnA7;
         private System.Windows.Forms.Button btnA8;
+        private System.Windows.Forms.GroupBox gbReports;
+        private System.Windows.Forms.FlowLayoutPanel flowReports;
+        private System.Windows.Forms.Button btnRevenueByDay;
+        private System.Windows.Forms.Button btnRevenueByHall;
+        private System.Windows.Forms.Button btnDepositsByEmployee;
         private System.Windows.Forms.GroupBox gbClub;
         private System.Windows.Forms.FlowLayoutPanel flowClub;
         private System.Windows.Forms.Button btnU1;

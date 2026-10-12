@@ -1,0 +1,66 @@
+using System;
+using System.Data;
+using System.Windows.Forms;
+using Microsoft.Reporting.WinForms;
+
+namespace PC_Club.Forms
+{
+    public partial class ReportForm : Form
+    {
+        private readonly ReportDef _report;
+
+        public ReportForm(ReportDef report)
+        {
+            InitializeComponent();
+            _report = report;
+            Text = report.Title;
+        }
+
+        private void ReportForm_Load(object sender, EventArgs e)
+        {
+            dtpTo.Value = DateTime.Today;
+            dtpFrom.Value = DateTime.Today.AddDays(-_report.DefaultDays);
+            reportViewer.ProcessingMode = ProcessingMode.Local;
+            reportViewer.ZoomMode = ZoomMode.PageWidth;
+            reportViewer.LocalReport.ReportEmbeddedResource = _report.Resource;
+            Build();
+        }
+
+        private void btnBuild_Click(object sender, EventArgs e)
+        {
+            Build();
+        }
+
+        private void Build()
+        {
+            DateTime from = dtpFrom.Value.Date;
+            DateTime to = dtpTo.Value.Date;
+            if (from > to)
+            {
+                MessageBox.Show("Дата «З» не може бути пізніше за дату «По».", Text,
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DataTable data;
+            try
+            {
+                data = Db.GetTable(_report.Sql, Db.P("@from", from), Db.P("@to", to));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Errors.Friendly(ex), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            reportViewer.LocalReport.DataSources.Clear();
+            reportViewer.LocalReport.DataSources.Add(new ReportDataSource(_report.DataSetName, data));
+            reportViewer.LocalReport.SetParameters(new[]
+            {
+                new ReportParameter("PeriodFrom", from.ToString("dd.MM.yyyy")),
+                new ReportParameter("PeriodTo", to.ToString("dd.MM.yyyy"))
+            });
+            reportViewer.RefreshReport();
+        }
+    }
+}

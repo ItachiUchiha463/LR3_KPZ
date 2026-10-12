@@ -274,24 +274,6 @@ ORDER BY [Дата] DESC;"
 
                 new QueryDef
                 {
-                    Code = "M5", Roles = Staff,
-                    Title = "Поповнення за період",
-                    Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
-                    Sql = @"
-SELECT e.last_name + N' ' + e.first_name AS [Працівник],
-       d.method      AS [Спосіб оплати],
-       COUNT(*)      AS [Поповнень],
-       SUM(d.amount) AS [Сума (грн)]
-FROM Deposit d
-JOIN Employee e ON e.employee_id = d.employee_id
-WHERE d.paid_at >= @from
-  AND d.paid_at < DATEADD(DAY, 1, @to)
-GROUP BY e.last_name, e.first_name, d.method
-ORDER BY [Працівник], [Спосіб оплати];"
-                },
-
-                new QueryDef
-                {
                     Code = "M7", Roles = Staff, ShowFilter = false, IsAction = true, AutoRun = false,
                     Title = "Реєстрація клієнта",
                     Params =
@@ -328,44 +310,6 @@ WHERE c.phone = @phone;"
                 },
 
                 // =============== АДМІНІСТРАТОР (власник) ===============
-
-                new QueryDef
-                {
-                    Code = "A1", Roles = AdminOnly,
-                    Title = "Виручка по днях",
-                    Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
-                    Sql = @"
-SELECT CAST(ended_at AS DATE)                 AS [Дата],
-       COUNT(*)                               AS [Сесій],
-       SUM(hours)                             AS [Годин],
-       SUM(total_price)                       AS [Виручка (грн)],
-       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек (грн)]
-FROM v_SessionDetails
-WHERE total_price IS NOT NULL
-  AND ended_at >= @from
-  AND ended_at < DATEADD(DAY, 1, @to)
-GROUP BY CAST(ended_at AS DATE)
-ORDER BY [Дата];"
-                },
-
-                new QueryDef
-                {
-                    Code = "A2", Roles = AdminOnly, ShowFilter = false,
-                    Title = "Виручка по залах",
-                    Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
-                    Sql = @"
-SELECT hall                                   AS [Зал],
-       COUNT(*)                               AS [Сесій],
-       SUM(hours)                             AS [Годин],
-       SUM(total_price)                       AS [Виручка (грн)],
-       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек (грн)]
-FROM v_SessionDetails
-WHERE total_price IS NOT NULL
-  AND ended_at >= @from
-  AND ended_at < DATEADD(DAY, 1, @to)
-GROUP BY hall
-ORDER BY [Виручка (грн)] DESC;"
-                },
 
                 new QueryDef
                 {
@@ -433,29 +377,6 @@ SELECT e.last_name + N' ' + e.first_name AS [Працівник],
            AND d.paid_at >= @from AND d.paid_at < DATEADD(DAY, 1, @to))      AS [Прийнято коштів (грн)]
 FROM Employee e
 ORDER BY [Прийнято коштів (грн)] DESC;"
-                },
-
-                new QueryDef
-                {
-                    Code = "A7", Roles = AdminOnly, ShowFilter = false,
-                    Title = "Виручка залів по днях тижня",
-                    Params = { DateP("from", "З", -60), DateP("to", "По", 0) },
-                    Sql = @"
-SELECT hall AS [Зал],
-       ISNULL([0], 0) AS [Пн], ISNULL([1], 0) AS [Вт], ISNULL([2], 0) AS [Ср],
-       ISNULL([3], 0) AS [Чт], ISNULL([4], 0) AS [Пт], ISNULL([5], 0) AS [Сб],
-       ISNULL([6], 0) AS [Нд],
-       ISNULL([0], 0) + ISNULL([1], 0) + ISNULL([2], 0) + ISNULL([3], 0)
-     + ISNULL([4], 0) + ISNULL([5], 0) + ISNULL([6], 0) AS [Разом (грн)]
-FROM (SELECT hall,
-             DATEDIFF(DAY, 0, started_at) % 7 AS dow,
-             total_price
-      FROM v_SessionDetails
-      WHERE total_price IS NOT NULL
-        AND started_at >= @from
-        AND started_at < DATEADD(DAY, 1, @to)) src
-PIVOT (SUM(total_price) FOR dow IN ([0], [1], [2], [3], [4], [5], [6])) p
-ORDER BY [Разом (грн)] DESC;"
                 },
 
                 new QueryDef

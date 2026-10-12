@@ -29,6 +29,23 @@ namespace PC_Club
             string key = tag.Substring(2);
             if (tag.StartsWith("Q:")) OpenQuery(owner, key);
             else if (tag.StartsWith("F:")) OpenTable(owner, key);
+            else if (tag.StartsWith("R:")) OpenReport(owner, key);
+        }
+
+        public static void OpenReport(Form owner, string code)
+        {
+            ReportDef r = ReportCatalog.Get(code);
+            if (r == null)
+            {
+                MessageBox.Show("Звіт " + code + " не знайдено.", "Звіт");
+                return;
+            }
+            if (!r.Roles.Contains(CurrentUser.Role))
+            {
+                MessageBox.Show("Цей звіт недоступний для ролі «" + CurrentUser.RoleName + "».", "Звіт");
+                return;
+            }
+            new ReportForm(r).Show(owner);
         }
 
         public static void OpenQuery(Form owner, string code)
@@ -98,6 +115,21 @@ namespace PC_Club
             Prepare(root, out hasButtons);
         }
 
+        private static bool IsAllowed(string kind, string key)
+        {
+            switch (kind)
+            {
+                case "Q:":
+                    QueryDef q = QueryCatalog.Get(key);
+                    return q != null && q.Roles.Contains(CurrentUser.Role);
+                case "R:":
+                    ReportDef r = ReportCatalog.Get(key);
+                    return r != null && r.Roles.Contains(CurrentUser.Role);
+                default:
+                    return CurrentUser.CanOpen(key);
+            }
+        }
+
         private static bool Prepare(Control parent, out bool hasButtons)
         {
             bool anyVisible = false;
@@ -109,9 +141,7 @@ namespace PC_Club
                 if (c is Button && tag != null && tag.Length > 2)
                 {
                     string key = tag.Substring(2);
-                    bool show = tag.StartsWith("Q:")
-                        ? QueryCatalog.Get(key) != null && QueryCatalog.Get(key).Roles.Contains(CurrentUser.Role)
-                        : CurrentUser.CanOpen(key);
+                    bool show = IsAllowed(tag.Substring(0, 2), key);
 
                     c.Visible = show;
                     hasButtons = true;

@@ -91,8 +91,26 @@ WHERE c.status <> N'Несправний'
                   WHERE s.computer_id = c.computer_id AND s.ended_at IS NULL);
 GO
 
+-- 4. Поповнення з іменами клієнта й працівника. Основа звіту «Поповнення по працівниках»
+CREATE OR ALTER VIEW dbo.v_DepositDetails
+AS
+SELECT
+    d.deposit_id,
+    d.paid_at,
+    d.client_id,
+    c.last_name + N' ' + c.first_name AS client,
+    d.employee_id,
+    e.last_name + N' ' + e.first_name AS employee,
+    d.method,
+    d.amount
+FROM Deposit d
+JOIN Client   c ON c.client_id   = d.client_id
+JOIN Employee e ON e.employee_id = d.employee_id;
+GO
+
 -- Перевірка
 SELECT N'v_SessionDetails' AS [Відображення], COUNT(*) AS [Рядків] FROM v_SessionDetails
 UNION ALL SELECT N'v_ActiveSessions', COUNT(*) FROM v_ActiveSessions
-UNION ALL SELECT N'v_FreeComputers',  COUNT(*) FROM v_FreeComputers;
--- v_SessionDetails = кількість сесій, v_ActiveSessions = 6, v_FreeComputers = 29 - 2 несправні - 6 зайняті = 21
+UNION ALL SELECT N'v_FreeComputers',  COUNT(*) FROM v_FreeComputers
+UNION ALL SELECT N'v_DepositDetails', COUNT(*) FROM v_DepositDetails;
+-- v_SessionDetails = кількість сесій, v_ActiveSessions = 6, v_FreeComputers = 29 - 2 несправні - 6 зайняті = 21, v_DepositDetails = кількість поповнень

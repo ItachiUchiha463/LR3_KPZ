@@ -1,4 +1,4 @@
-﻿/* Скрипт 4 з 4. Запити (17 + вхід + шапка клієнта)
+﻿/* Скрипт 4 з 4. Запити (13 + вхід + шапка клієнта)
 
    Кожен запит у своєму блоці між GO: виділи блок і натисни F5, щоб перевірити.
    Рядки DECLARE задають тестові значення параметрів; у програмі ці значення
@@ -180,22 +180,6 @@ WHERE s.client_id = @client_id
 ORDER BY [Дата] DESC;
 GO
 
--- M5. Поповнення за період по працівниках і способах оплати
--- Параметри: період.
--- Конструкції: GROUP BY двох полів, COUNT, SUM
-DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-SELECT e.last_name + N' ' + e.first_name AS [Працівник],
-       d.method        AS [Спосіб оплати],
-       COUNT(*)        AS [Поповнень],
-       SUM(d.amount)   AS [Сума (грн)]
-FROM Deposit d
-JOIN Employee e ON e.employee_id = d.employee_id
-WHERE d.paid_at >= @from
-  AND d.paid_at < DATEADD(DAY, 1, @to)
-GROUP BY e.last_name, e.first_name, d.method
-ORDER BY [Працівник], [Спосіб оплати];
-GO
-
 -- M7. Швидка реєстрація клієнта разом з обліковим записом (запит на дію: INSERT)
 -- Параметри: прізвище, ім'я, телефон, дата народження. Логін і пароль = телефон.
 -- Дві вставки одним пакетом; атомарність (транзакція) буде темою наступної роботи.
@@ -223,38 +207,6 @@ GO
 /* =====================================================================
    АДМІНІСТРАТОР (власник)
    ===================================================================== */
-
--- A1. Виручка по днях за період
--- Конструкції: відображення, BETWEEN-діапазон, GROUP BY за обчислюваним полем, SUM, AVG, COUNT
-DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-SELECT CAST(ended_at AS DATE)                AS [Дата],
-       COUNT(*)                              AS [Сесій],
-       SUM(hours)                            AS [Годин],
-       SUM(total_price)                      AS [Виручка (грн)],
-       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек (грн)]
-FROM v_SessionDetails
-WHERE total_price IS NOT NULL
-  AND ended_at >= @from
-  AND ended_at < DATEADD(DAY, 1, @to)
-GROUP BY CAST(ended_at AS DATE)
-ORDER BY [Дата];
-GO
-
--- A2. Виручка по залах за період
--- Конструкції: GROUP BY, SUM, AVG
-DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-SELECT hall                                   AS [Зал],
-       COUNT(*)                               AS [Сесій],
-       SUM(hours)                             AS [Годин],
-       SUM(total_price)                       AS [Виручка (грн)],
-       CAST(AVG(total_price) AS DECIMAL(8,2)) AS [Середній чек (грн)]
-FROM v_SessionDetails
-WHERE total_price IS NOT NULL
-  AND ended_at >= @from
-  AND ended_at < DATEADD(DAY, 1, @to)
-GROUP BY hall
-ORDER BY [Виручка (грн)] DESC;
-GO
 
 -- A3. Завантаженість комп'ютерів (разом із тими, що не мали жодної сесії)
 -- Конструкції: LEFT JOIN з умовою в ON (щоб не втратити ПК без сесій), COUNT, SUM, ISNULL
@@ -313,28 +265,6 @@ SELECT e.last_name + N' ' + e.first_name AS [Працівник],
            AND d.paid_at >= @from AND d.paid_at < DATEADD(DAY, 1, @to))      AS [Прийнято коштів (грн)]
 FROM Employee e
 ORDER BY [Прийнято коштів (грн)] DESC;
-GO
-
--- A7. Виручка залів по днях тижня (перехресний запит: зали в рядках, дні в колонках)
--- День тижня рахується як DATEDIFF(DAY, 0, дата) % 7, бо 01.01.1900 був понеділком:
--- так результат не залежить від налаштування SET DATEFIRST.
--- Конструкції: PIVOT, підзапит у FROM, ISNULL, обчислюване поле «Разом»
-DECLARE @from DATE = DATEADD(DAY, -60, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-SELECT hall AS [Зал],
-       ISNULL([0], 0) AS [Пн], ISNULL([1], 0) AS [Вт], ISNULL([2], 0) AS [Ср],
-       ISNULL([3], 0) AS [Чт], ISNULL([4], 0) AS [Пт], ISNULL([5], 0) AS [Сб],
-       ISNULL([6], 0) AS [Нд],
-       ISNULL([0], 0) + ISNULL([1], 0) + ISNULL([2], 0) + ISNULL([3], 0)
-     + ISNULL([4], 0) + ISNULL([5], 0) + ISNULL([6], 0) AS [Разом (грн)]
-FROM (SELECT hall,
-             DATEDIFF(DAY, 0, started_at) % 7 AS dow,
-             total_price
-      FROM v_SessionDetails
-      WHERE total_price IS NOT NULL
-        AND started_at >= @from
-        AND started_at < DATEADD(DAY, 1, @to)) src
-PIVOT (SUM(total_price) FOR dow IN ([0], [1], [2], [3], [4], [5], [6])) p
-ORDER BY [Разом (грн)] DESC;
 GO
 
 -- A8. Змінити ціни залу на X % (запит на дію: масовий UPDATE з обчисленням)
