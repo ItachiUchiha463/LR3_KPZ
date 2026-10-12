@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
-using System.Globalization;
 using System.Windows.Forms;
 namespace PC_Club.Forms
 {
@@ -476,7 +475,7 @@ namespace PC_Club.Forms
             string expr;
             try
             {
-                expr = BuildCondition(Field, cbOp.Text, text);
+                expr = FilterCondition.Build(_table.Columns[Field], cbOp.Text, text);
             }
             catch (Exception ex) when (ex is FormatException || ex is OverflowException)
             {
@@ -523,37 +522,6 @@ namespace PC_Club.Forms
             }
 
             bindingSource1.Filter = "(" + string.Join(") AND (", _conditions) + ")";
-        }
-
-        private static string DateLiteral(DateTime d)
-        {
-            return "#" + d.ToString("MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture) + "#";
-        }
-
-        private string BuildCondition(string field, string op, string text)
-        {
-            Type t = _table.Columns[field].DataType;
-            string safe = text.Replace("'", "''");
-
-            if (t == typeof(string))
-            {
-                if (op == "містить") return field + " LIKE '%" + safe + "%'";
-                return field + " " + op + " '" + safe + "'";
-            }
-
-            if (op == "містить")
-                return "Convert(" + field + ", 'System.String') LIKE '%" + safe + "%'";
-
-            if (t == typeof(DateTime))
-            {
-                DateTime d = DateTime.Parse(text, CultureInfo.CurrentCulture);
-                if (op == "=")
-                    return "(" + field + " >= " + DateLiteral(d.Date) + " AND " + field + " < " + DateLiteral(d.Date.AddDays(1)) + ")";
-                return field + " " + op + " " + DateLiteral(d);
-            }
-
-            decimal n = decimal.Parse(text.Replace(',', '.'), CultureInfo.InvariantCulture);
-            return field + " " + op + " " + n.ToString(CultureInfo.InvariantCulture);
         }
 
         private void btnReset_Click(object sender, EventArgs e)

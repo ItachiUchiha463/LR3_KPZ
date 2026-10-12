@@ -70,6 +70,7 @@
     <Compile Include="Classes\CurrentUser.cs" />
     <Compile Include="Classes\Db.cs" />
     <Compile Include="Classes\Errors.cs" />
+    <Compile Include="Classes\FilterCondition.cs" />
     <Compile Include="Classes\Nav.cs" />
     <Compile Include="Classes\QueryCatalog.cs" />
     <Compile Include="Classes\QueryDefinition.cs" />

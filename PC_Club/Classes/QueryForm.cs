@@ -22,8 +22,11 @@ namespace PC_Club.Forms
         private readonly DataGridView _grid = new DataGridView();
         private readonly ToolStripStatusLabel _count = new ToolStripStatusLabel();
         private readonly Button _btnRun = new Button();
-        private readonly ComboBox _filterField = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 200 };
-        private readonly TextBox _filterText = new TextBox { Width = 220 };
+        private readonly ComboBox _filterField = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
+        private readonly ComboBox _filterOp = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
+        private readonly TextBox _filterValue = new TextBox { Width = 150 };
+        private readonly ListBox _filterList = new ListBox { Width = 260, Height = 56 };
+        private readonly List<string> _conditions = new List<string>();
         private DataTable _table;
 
         public QueryForm(QueryDef q)
@@ -92,11 +95,26 @@ namespace PC_Club.Forms
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 Padding = new Padding(8, 0, 8, 6)
             };
-            filterPanel.Controls.Add(new Label { Text = "Фільтр:", AutoSize = true, Margin = new Padding(3, 6, 3, 3) });
+            _filterOp.Items.AddRange(FilterCondition.Operators);
+            _filterOp.SelectedIndex = 0;
+
+            var btnAddCondition = new Button { Text = "Додати умову", AutoSize = true };
+            var btnRemoveCondition = new Button { Text = "Видалити умову", AutoSize = true };
+            var btnClearConditions = new Button { Text = "Скинути", AutoSize = true };
+            btnAddCondition.Click += (s, e) => AddCondition();
+            btnRemoveCondition.Click += (s, e) => RemoveCondition();
+            btnClearConditions.Click += (s, e) => ClearConditions();
+            _filterValue.Enter += (s, e) => AcceptButton = btnAddCondition;
+            _filterValue.Leave += (s, e) => AcceptButton = _btnRun;
+
+            filterPanel.Controls.Add(new Label { Text = "Умови фільтра:", AutoSize = true, Margin = new Padding(3, 6, 3, 3) });
             filterPanel.Controls.Add(_filterField);
-            filterPanel.Controls.Add(_filterText);
-            _filterField.SelectedIndexChanged += (s, e) => ApplyFilter();
-            _filterText.TextChanged += (s, e) => ApplyFilter();
+            filterPanel.Controls.Add(_filterOp);
+            filterPanel.Controls.Add(_filterValue);
+            filterPanel.Controls.Add(btnAddCondition);
+            filterPanel.Controls.Add(btnRemoveCondition);
+            filterPanel.Controls.Add(btnClearConditions);
+            filterPanel.Controls.Add(_filterList);
             Controls.Add(filterPanel);
 
             Controls.Add(paramsPanel);
@@ -462,56 +480,97 @@ namespace PC_Club.Forms
             }
 
             FillFilterFields();
-            ApplyFilter();
+            if (!ApplyFilter(false)) ClearConditions();
         }
 
         private void FillFilterFields()
         {
             string previous = _filterField.SelectedItem as string;
             _filterField.Items.Clear();
-            _filterField.Items.Add("Усі колонки");
             foreach (DataColumn c in _table.Columns)
                 _filterField.Items.Add(c.ColumnName);
 
             int index = previous != null ? _filterField.Items.IndexOf(previous) : -1;
-            _filterField.SelectedIndex = index > 0 ? index : 0;
+            _filterField.SelectedIndex = index >= 0 ? index : (_filterField.Items.Count > 0 ? 0 : -1);
         }
 
-        private void ApplyFilter()
+        private void AddCondition()
         {
-            if (_table == null) return;
+            if (_table == null || _filterField.SelectedIndex < 0) return;
 
-            string text = _filterText.Text.Trim();
+            string field = (string)_filterField.SelectedItem;
+            string op = _filterOp.Text;
+            string text = _filterValue.Text.Trim();
             if (text == "")
             {
-                _table.DefaultView.RowFilter = "";
+                MessageBox.Show("Введіть значення для умови", Text);
+                return;
             }
-            else
-            {
-                IEnumerable<DataColumn> columns = _filterField.SelectedIndex > 0
-                    ? new[] { _table.Columns[(string)_filterField.SelectedItem] }
-                    : _table.Columns.Cast<DataColumn>();
 
-                string pattern = EscapeLike(text);
-                _table.DefaultView.RowFilter = string.Join(" OR ", columns.Select(c =>
-                    "CONVERT([" + c.ColumnName.Replace("]", "\\]") + "], 'System.String') LIKE '%" + pattern + "%'"));
+            string expr;
+            try
+            {
+                expr = FilterCondition.Build(_table.Columns[field], op, text);
+            }
+            catch (Exception ex) when (ex is FormatException || ex is OverflowException)
+            {
+                MessageBox.Show("Значення не відповідає типу поля «" + field + "»", Text);
+                return;
+            }
+
+            _conditions.Add(expr);
+            _filterList.Items.Add(field + " " + op + " " + text);
+
+            if (ApplyFilter(true))
+            {
+                _filterValue.Clear();
+                return;
+            }
+
+            _conditions.RemoveAt(_conditions.Count - 1);
+            _filterList.Items.RemoveAt(_filterList.Items.Count - 1);
+            ApplyFilter(false);
+        }
+
+        private void RemoveCondition()
+        {
+            int i = _filterList.SelectedIndex;
+            if (i < 0) return;
+
+            _conditions.RemoveAt(i);
+            _filterList.Items.RemoveAt(i);
+            ApplyFilter(false);
+        }
+
+        private void ClearConditions()
+        {
+            _conditions.Clear();
+            _filterList.Items.Clear();
+            _filterValue.Clear();
+            ApplyFilter(false);
+        }
+
+        private bool ApplyFilter(bool showError)
+        {
+            if (_table == null) return true;
+
+            bool ok = true;
+            try
+            {
+                _table.DefaultView.RowFilter = _conditions.Count == 0
+                    ? ""
+                    : "(" + string.Join(") AND (", _conditions) + ")";
+            }
+            catch (Exception ex)
+            {
+                if (showError) MessageBox.Show(ex.Message, "Помилка фільтра");
+                ok = false;
             }
 
             int shown = _table.DefaultView.Count;
             int total = _table.Rows.Count;
-            _count.Text = shown == total ? "Рядків: " + total : "Рядків: " + shown + " з " + total;
-        }
-
-        private static string EscapeLike(string text)
-        {
-            var result = new System.Text.StringBuilder();
-            foreach (char ch in text)
-            {
-                if (ch == '*' || ch == '%' || ch == '[' || ch == ']') result.Append('[').Append(ch).Append(']');
-                else if (ch == '\'') result.Append("''");
-                else result.Append(ch);
-            }
-            return result.ToString();
+            _count.Text = shown == total ? "Рядків: " + total : "Рядків: " + shown + " з " + total + " (застосовано фільтр)";
+            return ok;
         }
 
         // Чи є в колонці дат значення з часом (інакше показуємо лише дату)
