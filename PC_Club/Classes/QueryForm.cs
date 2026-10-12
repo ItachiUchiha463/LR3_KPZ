@@ -22,6 +22,9 @@ namespace PC_Club.Forms
         private readonly DataGridView _grid = new DataGridView();
         private readonly ToolStripStatusLabel _count = new ToolStripStatusLabel();
         private readonly Button _btnRun = new Button();
+        private readonly ComboBox _filterField = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 200 };
+        private readonly TextBox _filterText = new TextBox { Width = 220 };
+        private DataTable _table;
 
         public QueryForm(QueryDef q)
         {
@@ -81,6 +84,20 @@ namespace PC_Club.Forms
             _btnRun.Click += (s, e) => Run();
             paramsPanel.Controls.Add(_btnRun);
             AcceptButton = _btnRun;
+
+            var filterPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(8, 0, 8, 6)
+            };
+            filterPanel.Controls.Add(new Label { Text = "Фільтр:", AutoSize = true, Margin = new Padding(3, 6, 3, 3) });
+            filterPanel.Controls.Add(_filterField);
+            filterPanel.Controls.Add(_filterText);
+            _filterField.SelectedIndexChanged += (s, e) => ApplyFilter();
+            _filterText.TextChanged += (s, e) => ApplyFilter();
+            Controls.Add(filterPanel);
 
             Controls.Add(paramsPanel);
         }
@@ -419,6 +436,7 @@ namespace PC_Club.Forms
 
         private void ShowTable(DataTable table)
         {
+            _table = table;
             _grid.DataSource = table;
 
             foreach (DataGridViewColumn c in _grid.Columns)
@@ -443,7 +461,57 @@ namespace PC_Club.Forms
                 }
             }
 
-            _count.Text = "Рядків: " + table.Rows.Count;
+            FillFilterFields();
+            ApplyFilter();
+        }
+
+        private void FillFilterFields()
+        {
+            string previous = _filterField.SelectedItem as string;
+            _filterField.Items.Clear();
+            _filterField.Items.Add("Усі колонки");
+            foreach (DataColumn c in _table.Columns)
+                _filterField.Items.Add(c.ColumnName);
+
+            int index = previous != null ? _filterField.Items.IndexOf(previous) : -1;
+            _filterField.SelectedIndex = index > 0 ? index : 0;
+        }
+
+        private void ApplyFilter()
+        {
+            if (_table == null) return;
+
+            string text = _filterText.Text.Trim();
+            if (text == "")
+            {
+                _table.DefaultView.RowFilter = "";
+            }
+            else
+            {
+                IEnumerable<DataColumn> columns = _filterField.SelectedIndex > 0
+                    ? new[] { _table.Columns[(string)_filterField.SelectedItem] }
+                    : _table.Columns.Cast<DataColumn>();
+
+                string pattern = EscapeLike(text);
+                _table.DefaultView.RowFilter = string.Join(" OR ", columns.Select(c =>
+                    "CONVERT([" + c.ColumnName.Replace("]", "\\]") + "], 'System.String') LIKE '%" + pattern + "%'"));
+            }
+
+            int shown = _table.DefaultView.Count;
+            int total = _table.Rows.Count;
+            _count.Text = shown == total ? "Рядків: " + total : "Рядків: " + shown + " з " + total;
+        }
+
+        private static string EscapeLike(string text)
+        {
+            var result = new System.Text.StringBuilder();
+            foreach (char ch in text)
+            {
+                if (ch == '*' || ch == '%' || ch == '[' || ch == ']') result.Append('[').Append(ch).Append(']');
+                else if (ch == '\'') result.Append("''");
+                else result.Append(ch);
+            }
+            return result.ToString();
         }
 
         // Чи є в колонці дат значення з часом (інакше показуємо лише дату)
