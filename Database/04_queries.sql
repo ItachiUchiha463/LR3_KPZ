@@ -1,4 +1,4 @@
-﻿/* Скрипт 4 з 4. Запити (19 + вхід + шапка клієнта)
+﻿/* Скрипт 4 з 4. Запити (18 + вхід + шапка клієнта)
 
    Кожен запит у своєму блоці між GO: виділи блок і натисни F5, щоб перевірити.
    Рядки DECLARE задають тестові значення параметрів; у програмі ці значення
@@ -332,21 +332,6 @@ SELECT e.last_name + N' ' + e.first_name AS [Працівник],
            AND d.paid_at >= @from AND d.paid_at < DATEADD(DAY, 1, @to))      AS [Прийнято коштів, грн]
 FROM Employee e
 ORDER BY [Прийнято коштів, грн] DESC;
-GO
-
--- A6. Ігри, яких бракує на комп'ютерах (встановлені менш ніж на N ПК, у т. ч. ніде)
--- Конструкції: LEFT JOIN, GROUP BY, HAVING, COUNT по стовпцю (не рахує NULL)
-DECLARE @max_pc INT = 5;
-SELECT g.title     AS [Гра],
-       ge.name     AS [Жанр],
-       g.age_limit AS [Вікове обмеження],
-       COUNT(cg.computer_id) AS [Встановлено на ПК]
-FROM Game g
-JOIN Genre ge ON ge.genre_id = g.genre_id
-LEFT JOIN ComputerGame cg ON cg.game_id = g.game_id
-GROUP BY g.game_id, g.title, ge.name, g.age_limit
-HAVING COUNT(cg.computer_id) < @max_pc
-ORDER BY [Встановлено на ПК], [Гра];
 GO
 
 -- A7. Виручка залів по днях тижня (перехресний запит: зали в рядках, дні в колонках)

@@ -44,7 +44,6 @@
             this.btnA3 = new System.Windows.Forms.Button();
             this.btnA4 = new System.Windows.Forms.Button();
             this.btnA5 = new System.Windows.Forms.Button();
-            this.btnA6 = new System.Windows.Forms.Button();
             this.btnA7 = new System.Windows.Forms.Button();
             this.btnA8 = new System.Windows.Forms.Button();
             this.btnA9 = new System.Windows.Forms.Button();
@@ -263,7 +262,7 @@
             this.gbAdmin.Controls.Add(this.flowAdmin);
             this.gbAdmin.Dock = System.Windows.Forms.DockStyle.Top;
             this.gbAdmin.Name = "gbAdmin";
-            this.gbAdmin.Size = new System.Drawing.Size(760, 146);
+            this.gbAdmin.Size = new System.Drawing.Size(760, 108);
             this.gbAdmin.TabIndex = 2;
             this.gbAdmin.TabStop = false;
             this.gbAdmin.Text = "Адміністрування";
@@ -275,7 +274,6 @@
             this.flowAdmin.Controls.Add(this.btnA3);
             this.flowAdmin.Controls.Add(this.btnA4);
             this.flowAdmin.Controls.Add(this.btnA5);
-            this.flowAdmin.Controls.Add(this.btnA6);
             this.flowAdmin.Controls.Add(this.btnA7);
             this.flowAdmin.Controls.Add(this.btnA8);
             this.flowAdmin.Controls.Add(this.btnA9);
@@ -333,21 +331,11 @@
             this.btnA5.UseVisualStyleBackColor = true;
             this.btnA5.Click += new System.EventHandler(this.OpenByTag_Click);
             // 
-            // btnA6
-            // 
-            this.btnA6.Name = "btnA6";
-            this.btnA6.Size = new System.Drawing.Size(180, 32);
-            this.btnA6.TabIndex = 5;
-            this.btnA6.Tag = "Q:A6";
-            this.btnA6.Text = "Ігри, яких бракує";
-            this.btnA6.UseVisualStyleBackColor = true;
-            this.btnA6.Click += new System.EventHandler(this.OpenByTag_Click);
-            // 
             // btnA7
             // 
             this.btnA7.Name = "btnA7";
             this.btnA7.Size = new System.Drawing.Size(180, 32);
-            this.btnA7.TabIndex = 6;
+            this.btnA7.TabIndex = 5;
             this.btnA7.Tag = "Q:A7";
             this.btnA7.Text = "Виручка по днях тижня";
             this.btnA7.UseVisualStyleBackColor = true;
@@ -357,7 +345,7 @@
             // 
             this.btnA8.Name = "btnA8";
             this.btnA8.Size = new System.Drawing.Size(180, 32);
-            this.btnA8.TabIndex = 7;
+            this.btnA8.TabIndex = 6;
             this.btnA8.Tag = "Q:A8";
             this.btnA8.Text = "Змінити ціни залів";
             this.btnA8.UseVisualStyleBackColor = true;
@@ -367,7 +355,7 @@
             // 
             this.btnA9.Name = "btnA9";
             this.btnA9.Size = new System.Drawing.Size(180, 32);
-            this.btnA9.TabIndex = 8;
+            this.btnA9.TabIndex = 7;
             this.btnA9.Tag = "Q:A9";
             this.btnA9.Text = "Неактивні клієнти";
             this.btnA9.UseVisualStyleBackColor = true;
@@ -645,7 +633,6 @@
         private System.Windows.Forms.Button btnA3;
         private System.Windows.Forms.Button btnA4;
         private System.Windows.Forms.Button btnA5;
-        private System.Windows.Forms.Button btnA6;
         private System.Windows.Forms.Button btnA7;
         private System.Windows.Forms.Button btnA8;
         private System.Windows.Forms.Button btnA9;

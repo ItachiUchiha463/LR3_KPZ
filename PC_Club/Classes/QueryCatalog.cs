@@ -495,24 +495,6 @@ ORDER BY [Прийнято коштів, грн] DESC;"
 
                 new QueryDef
                 {
-                    Code = "A6", Roles = AdminOnly,
-                    Title = "Ігри, яких бракує на комп'ютерах",
-                    Params = { Int("max_pc", "Встановлено менш ніж на ПК", 5, 1, 1000) },
-                    Sql = @"
-SELECT g.title     AS [Гра],
-       ge.name     AS [Жанр],
-       g.age_limit AS [Вікове обмеження],
-       COUNT(cg.computer_id) AS [Встановлено на ПК]
-FROM Game g
-JOIN Genre ge ON ge.genre_id = g.genre_id
-LEFT JOIN ComputerGame cg ON cg.game_id = g.game_id
-GROUP BY g.game_id, g.title, ge.name, g.age_limit
-HAVING COUNT(cg.computer_id) < @max_pc
-ORDER BY [Встановлено на ПК], [Гра];"
-                },
-
-                new QueryDef
-                {
                     Code = "A7", Roles = AdminOnly,
                     Title = "Виручка залів по днях тижня",
                     Params = { DateP("from", "З", -60), DateP("to", "По", 0) },
