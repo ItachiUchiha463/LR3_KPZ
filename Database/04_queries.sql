@@ -49,15 +49,13 @@ GO
    ===================================================================== */
 
 -- U1. Вільні комп'ютери зараз
--- Параметр: зал (0 = усі). Конструкції: відображення v_FreeComputers, WHERE, ORDER BY
-DECLARE @hall_id INT = 0;
+-- Конструкції: відображення v_FreeComputers, ORDER BY
 SELECT hall           AS [Зал],
        number         AS [Номер],
        gpu            AS [Відеокарта],
        monitor_hz     AS [Монітор, Гц],
        price_per_hour AS [Ціна за годину, грн]
 FROM v_FreeComputers
-WHERE @hall_id = 0 OR hall_id = @hall_id
 ORDER BY hall, number;
 GO
 
@@ -102,8 +100,7 @@ ORDER BY ge.name, g.title;
 GO
 
 -- U4. Калькулятор вартості: усі зали × усі тарифи
--- Параметр: зал (0 = усі). Конструкції: CROSS JOIN, обчислювані поля, псевдоніми
-DECLARE @hall_id INT = 0;
+-- Конструкції: CROSS JOIN, обчислювані поля, псевдоніми
 SELECT h.name             AS [Зал],
        t.name             AS [Тариф],
        t.hours            AS [Годин],
@@ -113,7 +110,6 @@ SELECT h.name             AS [Зал],
        CAST(h.price_per_hour * (100 - t.discount_percent) / 100.0 AS DECIMAL(8,2))           AS [За годину, грн]
 FROM Hall h
 CROSS JOIN Tariff t
-WHERE @hall_id = 0 OR h.hall_id = @hall_id
 ORDER BY h.name, [До сплати, грн];
 GO
 
@@ -134,10 +130,9 @@ ORDER BY [Сесій] DESC, [Годин зіграно] DESC;
 GO
 
 -- U6. Мої сесії
--- Параметри: клієнт (береться з облікового запису, не вводиться), період.
+-- Параметр: клієнт (береться з облікового запису, не вводиться).
 -- Конструкції: відображення, WHERE з параметрами, діапазон дат
 DECLARE @client_id INT = 1;
-DECLARE @from DATE = DATEADD(MONTH, -2, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
 SELECT started_at  AS [Початок],
        ended_at    AS [Завершення],
        computer    AS [Комп'ютер],
@@ -147,8 +142,6 @@ SELECT started_at  AS [Початок],
        total_price AS [Сума, грн]
 FROM v_SessionDetails
 WHERE client_id = @client_id
-  AND started_at >= @from
-  AND started_at < DATEADD(DAY, 1, @to)
 ORDER BY started_at DESC;
 GO
 
@@ -196,10 +189,9 @@ ORDER BY [Дата] DESC;
 GO
 
 -- M5. Поповнення за період по працівниках і способах оплати
--- Параметри: період, працівник (0 = усі; за замовчуванням поточний менеджер).
+-- Параметри: період.
 -- Конструкції: GROUP BY двох полів, COUNT, SUM
 DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-DECLARE @employee_id INT = 0;
 SELECT e.last_name + N' ' + e.first_name AS [Працівник],
        d.method        AS [Спосіб оплати],
        COUNT(*)        AS [Поповнень],
@@ -208,7 +200,6 @@ FROM Deposit d
 JOIN Employee e ON e.employee_id = d.employee_id
 WHERE d.paid_at >= @from
   AND d.paid_at < DATEADD(DAY, 1, @to)
-  AND (@employee_id = 0 OR d.employee_id = @employee_id)
 GROUP BY e.last_name, e.first_name, d.method
 ORDER BY [Працівник], [Спосіб оплати];
 GO
@@ -257,10 +248,9 @@ GROUP BY CAST(ended_at AS DATE)
 ORDER BY [Дата];
 GO
 
--- A2. Виручка по залах (лише зали з виручкою більше заданої)
--- Конструкції: GROUP BY, HAVING, SUM, AVG
+-- A2. Виручка по залах за період
+-- Конструкції: GROUP BY, SUM, AVG
 DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-DECLARE @min DECIMAL(10,2) = 0;
 SELECT hall                                   AS [Зал],
        COUNT(*)                               AS [Сесій],
        SUM(hours)                             AS [Годин],
@@ -271,7 +261,6 @@ WHERE total_price IS NOT NULL
   AND ended_at >= @from
   AND ended_at < DATEADD(DAY, 1, @to)
 GROUP BY hall
-HAVING SUM(total_price) > @min
 ORDER BY [Виручка, грн] DESC;
 GO
 

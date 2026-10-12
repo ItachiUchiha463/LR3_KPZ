@@ -117,6 +117,17 @@ namespace PC_Club.Forms
             filterPanel.Controls.Add(_filterList);
             Controls.Add(filterPanel);
 
+            if (_inputs.Count == 0 && !_q.IsAction)
+            {
+                paramsPanel.Controls.Remove(_btnRun);
+                _btnRun.Height = btnAddCondition.Height;
+                _btnRun.Margin = new Padding(3);
+                filterPanel.Controls.Add(_btnRun);
+                filterPanel.Controls.SetChildIndex(_btnRun, filterPanel.Controls.IndexOf(_filterList));
+                filterPanel.Padding = new Padding(8, 8, 8, 6);
+                return;
+            }
+
             Controls.Add(paramsPanel);
         }
 

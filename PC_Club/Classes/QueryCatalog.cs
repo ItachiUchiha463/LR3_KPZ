@@ -146,7 +146,6 @@ namespace PC_Club
                 {
                     Code = "U1", Roles = Everyone,
                     Title = "Вільні комп'ютери",
-                    Params = { Look("hall_id", "Зал", Lookups.Halls, true) },
                     Sql = @"
 SELECT hall           AS [Зал],
        number         AS [Номер],
@@ -154,7 +153,6 @@ SELECT hall           AS [Зал],
        monitor_hz     AS [Монітор, Гц],
        price_per_hour AS [Ціна за годину, грн]
 FROM v_FreeComputers
-WHERE @hall_id = 0 OR hall_id = @hall_id
 ORDER BY hall, number;"
                 },
 
@@ -210,7 +208,6 @@ ORDER BY ge.name, g.title;"
                 {
                     Code = "U4", Roles = Everyone,
                     Title = "Калькулятор вартості",
-                    Params = { Look("hall_id", "Зал", Lookups.Halls, true) },
                     Sql = @"
 SELECT h.name             AS [Зал],
        t.name             AS [Тариф],
@@ -221,7 +218,6 @@ SELECT h.name             AS [Зал],
        CAST(h.price_per_hour * (100 - t.discount_percent) / 100.0 AS DECIMAL(8,2))           AS [За годину, грн]
 FROM Hall h
 CROSS JOIN Tariff t
-WHERE @hall_id = 0 OR h.hall_id = @hall_id
 ORDER BY h.name, [До сплати, грн];"
                 },
 
@@ -248,12 +244,7 @@ ORDER BY [Сесій] DESC, [Годин зіграно] DESC;"
                 {
                     Code = "U6", Roles = ClientOnly,
                     Title = "Мої сесії",
-                    Params =
-                    {
-                        CurrentClient(),
-                        DateP("from", "З", -60),
-                        DateP("to", "По", 0)
-                    },
+                    Params = { CurrentClient() },
                     Sql = @"
 SELECT started_at  AS [Початок],
        ended_at    AS [Завершення],
@@ -264,8 +255,6 @@ SELECT started_at  AS [Початок],
        total_price AS [Сума, грн]
 FROM v_SessionDetails
 WHERE client_id = @client_id
-  AND started_at >= @from
-  AND started_at < DATEADD(DAY, 1, @to)
 ORDER BY started_at DESC;"
                 },
 
@@ -321,13 +310,7 @@ ORDER BY [Дата] DESC;"
                 {
                     Code = "M5", Roles = Staff,
                     Title = "Поповнення за період",
-                    Params =
-                    {
-                        DateP("from", "З", -30),
-                        DateP("to", "По", 0),
-                        Look("employee_id", "Працівник", Lookups.Employees, true,
-                             () => CurrentUser.EmployeeId ?? 0)
-                    },
+                    Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
 SELECT e.last_name + N' ' + e.first_name AS [Працівник],
        d.method      AS [Спосіб оплати],
@@ -337,7 +320,6 @@ FROM Deposit d
 JOIN Employee e ON e.employee_id = d.employee_id
 WHERE d.paid_at >= @from
   AND d.paid_at < DATEADD(DAY, 1, @to)
-  AND (@employee_id = 0 OR d.employee_id = @employee_id)
 GROUP BY e.last_name, e.first_name, d.method
 ORDER BY [Працівник], [Спосіб оплати];"
                 },
@@ -404,12 +386,7 @@ ORDER BY [Дата];"
                 {
                     Code = "A2", Roles = AdminOnly,
                     Title = "Виручка по залах",
-                    Params =
-                    {
-                        DateP("from", "З", -30),
-                        DateP("to", "По", 0),
-                        Dec("min", "Виручка більше, грн", 0, 0, 10000000)
-                    },
+                    Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
 SELECT hall                                   AS [Зал],
        COUNT(*)                               AS [Сесій],
@@ -421,7 +398,6 @@ WHERE total_price IS NOT NULL
   AND ended_at >= @from
   AND ended_at < DATEADD(DAY, 1, @to)
 GROUP BY hall
-HAVING SUM(total_price) > @min
 ORDER BY [Виручка, грн] DESC;"
                 },
 
