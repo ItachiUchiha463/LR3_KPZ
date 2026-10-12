@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace PC_Club.Forms
@@ -22,7 +20,6 @@ namespace PC_Club.Forms
         private readonly List<Action> _lookupDefaults = new List<Action>();
 
         private readonly DataGridView _grid = new DataGridView();
-        private readonly TextBox _sqlBox = new TextBox();
         private readonly ToolStripStatusLabel _count = new ToolStripStatusLabel();
         private readonly Button _btnRun = new Button();
 
@@ -52,16 +49,6 @@ namespace PC_Club.Forms
             _grid.RowHeadersVisible = false;
             _grid.CellFormatting += Grid_CellFormatting;
             Controls.Add(_grid);
-
-            _sqlBox.Dock = DockStyle.Bottom;
-            _sqlBox.Height = 160;
-            _sqlBox.Multiline = true;
-            _sqlBox.ReadOnly = true;
-            _sqlBox.WordWrap = false;
-            _sqlBox.ScrollBars = ScrollBars.Both;
-            _sqlBox.Font = new Font("Consolas", 9.5f);
-            _sqlBox.Visible = false;
-            Controls.Add(_sqlBox);
 
             var status = new StatusStrip();
             _count.Text = "Рядків: 0";
@@ -95,17 +82,7 @@ namespace PC_Club.Forms
             paramsPanel.Controls.Add(_btnRun);
             AcceptButton = _btnRun;
 
-            var showSql = new CheckBox
-            {
-                Text = "Показати SQL",
-                AutoSize = true,
-                Margin = new Padding(12, 27, 3, 3)
-            };
-            showSql.CheckedChanged += (s, e) => _sqlBox.Visible = showSql.Checked;
-            paramsPanel.Controls.Add(showSql);
-
             Controls.Add(paramsPanel);
-
         }
 
         // Підпис над полем
@@ -376,8 +353,6 @@ namespace PC_Club.Forms
             Dictionary<string, string> ops;
             if (!Collect(out values, out ops)) return;
 
-            ShowSql(Prepare(_q.Sql, ops), values);
-
             try
             {
                 if (_q.IsAction)
@@ -502,30 +477,6 @@ namespace PC_Club.Forms
 
             if (e.Value is decimal && (decimal)e.Value < 0)
                 e.CellStyle.ForeColor = Color.Firebrick;
-        }
-
-        // Текст виконаного запиту зі значеннями параметрів (для звіту й перевірки)
-        private void ShowSql(string sql, Dictionary<string, object> values)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(sql.Replace("\r\n", "\n").Replace("\n", "\r\n").Trim());
-
-            if (values.Count > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine("-- Параметри:");
-                foreach (var v in values)
-                    sb.AppendLine("--   @" + v.Key + " = " + FormatValue(v.Value));
-            }
-            _sqlBox.Text = sb.ToString();
-        }
-
-        private static string FormatValue(object v)
-        {
-            if (v == null || v == DBNull.Value) return "NULL";
-            if (v is DateTime) return ((DateTime)v).ToString("dd.MM.yyyy");
-            if (v is string) return "'" + v + "'";
-            return Convert.ToString(v, CultureInfo.InvariantCulture);
         }
     }
 }
