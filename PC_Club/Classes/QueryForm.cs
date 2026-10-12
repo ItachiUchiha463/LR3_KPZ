@@ -30,7 +30,6 @@ namespace PC_Club.Forms
         {
             _q = q;
             Text = q.Code + ". " + q.Title;
-            Font = new Font("Segoe UI", 9.5f);
             StartPosition = FormStartPosition.CenterParent;
             Size = new Size(1050, 650);
             MinimumSize = new Size(700, 450);
@@ -51,7 +50,6 @@ namespace PC_Club.Forms
             _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             _grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             _grid.RowHeadersVisible = false;
-            _grid.BackgroundColor = Color.White;
             _grid.CellFormatting += Grid_CellFormatting;
             Controls.Add(_grid);
 
@@ -89,7 +87,7 @@ namespace PC_Club.Forms
                 paramsPanel.Controls.Add(WithCaption(p.Caption, input, p.Width));
             }
 
-            _btnRun.Text = _q.IsAction ? "Виконати" : "Знайти";
+            _btnRun.Text = _q.IsAction ? "Виконати" : _inputs.Count == 0 ? "Оновити" : "Знайти";
             _btnRun.Width = 110;
             _btnRun.Height = 30;
             _btnRun.Margin = new Padding(6, 21, 3, 3);
@@ -108,30 +106,13 @@ namespace PC_Club.Forms
 
             Controls.Add(paramsPanel);
 
-            // Шапка: назва й пояснення запиту
-            var header = new Panel
+            Controls.Add(new Label
             {
                 Dock = DockStyle.Top,
-                Height = 78,
-                Padding = new Padding(12, 8, 12, 4),
-                BackColor = Color.White
-            };
-            var lblDesc = new Label
-            {
-                Dock = DockStyle.Fill,
-                Text = _q.Description ?? "",
-                ForeColor = Color.DimGray
-            };
-            var lblTitle = new Label
-            {
-                Dock = DockStyle.Top,
-                Height = 30,
-                Text = _q.Code + ". " + _q.Title + (_q.IsAction ? "   (запит на зміну даних)" : ""),
-                Font = new Font("Segoe UI", 13f, FontStyle.Bold)
-            };
-            header.Controls.Add(lblDesc);
-            header.Controls.Add(lblTitle);
-            Controls.Add(header);
+                Height = 32,
+                Padding = new Padding(8, 10, 8, 0),
+                Text = _q.Description ?? ""
+            });
         }
 
         // Підпис над полем
@@ -475,8 +456,6 @@ namespace PC_Club.Forms
             foreach (DataGridViewColumn c in _grid.Columns)
             {
                 string name = c.DataPropertyName;
-                if (_q.CaptionsFrom != null) c.HeaderText = Captions.Get(_q.CaptionsFrom, name);
-                if (_q.HiddenColumns.Contains(name)) c.Visible = false;
 
                 if (!table.Columns.Contains(name)) continue;
                 Type t = table.Columns[name].DataType;

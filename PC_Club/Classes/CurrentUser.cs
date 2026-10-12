@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 
 namespace PC_Club
@@ -59,33 +58,6 @@ namespace PC_Club
             }
         }
 
-        // Колір ролі: шапка головного вікна і рядок стану таблиць
-        public static Color RoleColor
-        {
-            get
-            {
-                switch (Role)
-                {
-                    case UserRole.Admin: return Color.FromArgb(165, 50, 50);
-                    case UserRole.Manager: return Color.FromArgb(40, 90, 160);
-                    default: return Color.FromArgb(40, 130, 90);
-                }
-            }
-        }
-
-        public static string Rights
-        {
-            get
-            {
-                switch (Role)
-                {
-                    case UserRole.Admin: return "Повний доступ: перегляд і редагування всіх даних, звіти";
-                    case UserRole.Manager: return "Робота зміни: клієнти, сесії, поповнення";
-                    default: return "Перегляд клубу і власних даних";
-                }
-            }
-        }
-
         // Що редагує менеджер
         private static readonly string[] ManagerEdit =
             { "ClientsForm", "SessionsForm", "DepositsForm" };
@@ -100,13 +72,6 @@ namespace PC_Club
             if (Role == UserRole.Admin) return true;
             if (Role == UserRole.Manager) return ManagerEdit.Contains(form);
             return false;
-        }
-
-        public static string AccessMode(string form)
-        {
-            if (CanEdit(form)) return "редагування";
-            if (CanOpen(form)) return "перегляд";
-            return "немає доступу";
         }
     }
 } 

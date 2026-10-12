@@ -46,8 +46,6 @@ namespace PC_Club
         public List<QueryParam> Params = new List<QueryParam>();
 
         public bool AutoRun = true;      // виконати одразу при відкритті форми
-        public string CaptionsFrom;      // таблиця для українських заголовків, якщо колонки без псевдонімів
-        public string[] HiddenColumns = new string[0];   // колонки результату, які не показувати
 
         // Лише для запитів на дію (INSERT / UPDATE / DELETE)
         public bool IsAction;
