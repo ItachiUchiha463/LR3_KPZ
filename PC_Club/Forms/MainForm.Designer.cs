@@ -46,7 +46,6 @@
             this.btnA5 = new System.Windows.Forms.Button();
             this.btnA7 = new System.Windows.Forms.Button();
             this.btnA8 = new System.Windows.Forms.Button();
-            this.btnA9 = new System.Windows.Forms.Button();
             this.gbClub = new System.Windows.Forms.GroupBox();
             this.flowClub = new System.Windows.Forms.FlowLayoutPanel();
             this.btnU1 = new System.Windows.Forms.Button();
@@ -276,7 +275,6 @@
             this.flowAdmin.Controls.Add(this.btnA5);
             this.flowAdmin.Controls.Add(this.btnA7);
             this.flowAdmin.Controls.Add(this.btnA8);
-            this.flowAdmin.Controls.Add(this.btnA9);
             this.flowAdmin.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowAdmin.Name = "flowAdmin";
             this.flowAdmin.TabIndex = 0;
@@ -350,16 +348,6 @@
             this.btnA8.Text = "Змінити ціни залів";
             this.btnA8.UseVisualStyleBackColor = true;
             this.btnA8.Click += new System.EventHandler(this.OpenByTag_Click);
-            // 
-            // btnA9
-            // 
-            this.btnA9.Name = "btnA9";
-            this.btnA9.Size = new System.Drawing.Size(180, 32);
-            this.btnA9.TabIndex = 7;
-            this.btnA9.Tag = "Q:A9";
-            this.btnA9.Text = "Неактивні клієнти";
-            this.btnA9.UseVisualStyleBackColor = true;
-            this.btnA9.Click += new System.EventHandler(this.OpenByTag_Click);
             // 
             // gbClub
             // 
@@ -635,7 +623,6 @@
         private System.Windows.Forms.Button btnA5;
         private System.Windows.Forms.Button btnA7;
         private System.Windows.Forms.Button btnA8;
-        private System.Windows.Forms.Button btnA9;
         private System.Windows.Forms.GroupBox gbClub;
         private System.Windows.Forms.FlowLayoutPanel flowClub;
         private System.Windows.Forms.Button btnU1;

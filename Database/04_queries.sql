@@ -1,10 +1,10 @@
-﻿/* Скрипт 4 з 4. Запити (18 + вхід + шапка клієнта)
+﻿/* Скрипт 4 з 4. Запити (17 + вхід + шапка клієнта)
 
    Кожен запит у своєму блоці між GO: виділи блок і натисни F5, щоб перевірити.
    Рядки DECLARE задають тестові значення параметрів; у програмі ці значення
    прийдуть з полів форми як параметри SqlCommand (@назва), тож текст після DECLARE
    переноситься в C# без змін.
-   Запити на дію (M7, A8, A9) обгорнуто в BEGIN TRAN ... ROLLBACK лише для
+   Запити на дію (M7, A8) обгорнуто в BEGIN TRAN ... ROLLBACK лише для
    перевірки: вони показують результат, але нічого не змінюють у базі. */
 
 USE PCClub;
@@ -347,36 +347,5 @@ SET price_per_hour = ROUND(price_per_hour * (100 + @percent) / 100, 0)
 WHERE @hall_id = 0 OR hall_id = @hall_id;
 SELECT @@ROWCOUNT AS [Змінено записів];
 SELECT name, price_per_hour AS [Стало] FROM Hall WHERE @hall_id = 0 OR hall_id = @hall_id;
-ROLLBACK;
-GO
-
--- A9. Видалити неактивних клієнтів (запит на дію: DELETE з підзапитами)
--- Неактивний: зареєстрований понад N днів тому, нуль на балансі, жодної сесії й поповнення.
--- Спочатку попередній перегляд (у програмі показується перед підтвердженням),
--- потім видалення облікових записів і самих клієнтів.
-DECLARE @days INT = 180;
-
-SELECT c.client_id, c.last_name, c.first_name, c.phone, c.registered_at
-FROM Client c
-WHERE c.balance = 0
-  AND c.registered_at < DATEADD(DAY, -@days, CAST(GETDATE() AS DATE))
-  AND NOT EXISTS (SELECT 1 FROM Session s WHERE s.client_id = c.client_id)
-  AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.client_id = c.client_id);
-
-BEGIN TRAN;   -- лише для перевірки в SSMS
-DELETE ua
-FROM UserAccount ua
-JOIN Client c ON c.user_id = ua.user_id
-WHERE c.balance = 0
-  AND c.registered_at < DATEADD(DAY, -@days, CAST(GETDATE() AS DATE))
-  AND NOT EXISTS (SELECT 1 FROM Session s WHERE s.client_id = c.client_id)
-  AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.client_id = c.client_id);
-
-DELETE FROM Client
-WHERE balance = 0
-  AND registered_at < DATEADD(DAY, -@days, CAST(GETDATE() AS DATE))
-  AND NOT EXISTS (SELECT 1 FROM Session s WHERE s.client_id = Client.client_id)
-  AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.client_id = Client.client_id);
-SELECT @@ROWCOUNT AS [Видалено клієнтів];
 ROLLBACK;
 GO

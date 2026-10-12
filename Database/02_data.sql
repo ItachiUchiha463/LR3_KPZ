@@ -168,7 +168,7 @@ JOIN @fn f     ON f.id = r.r2 % @fnCount + 1
 JOIN @prefix p ON p.id = r.r3 % 12 + 1
 ORDER BY r.n;
 
--- Неактивні клієнти: давно зареєстровані, без сесій і поповнень (для запиту A9)
+-- Неактивні клієнти: давно зареєстровані, без сесій і поповнень
 INSERT INTO Client (last_name, first_name, phone, birth_date, registered_at) VALUES
 (N'Гнатюк',    N'Петро',  N'0990000001', '1999-03-14', DATEADD(DAY, -400, @today)),
 (N'Сидоренко', N'Ольга',  N'0990000002', '2002-07-01', DATEADD(DAY, -350, @today)),

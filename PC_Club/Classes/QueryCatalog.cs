@@ -483,41 +483,6 @@ WHERE @hall_id = 0 OR hall_id = @hall_id;",
 SELECT name AS [Зал], price_per_hour AS [Ціна за годину (грн)]
 FROM Hall
 ORDER BY name;"
-                },
-
-                new QueryDef
-                {
-                    Code = "A9", Roles = AdminOnly, ShowFilter = false, IsAction = true, AutoRun = false,
-                    Title = "Видалити неактивних клієнтів",
-                    Params = { Int("days", "Зареєстровані понад днів тому", 180, 1, 3650) },
-                    PreviewSql = @"
-SELECT c.client_id     AS [Код],
-       c.last_name     AS [Прізвище],
-       c.first_name    AS [Ім'я],
-       c.phone         AS [Телефон],
-       c.registered_at AS [Зареєстрований]
-FROM Client c
-WHERE c.balance = 0
-  AND c.registered_at < DATEADD(DAY, -@days, CAST(GETDATE() AS DATE))
-  AND NOT EXISTS (SELECT 1 FROM Session s WHERE s.client_id = c.client_id)
-  AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.client_id = c.client_id)
-ORDER BY c.registered_at;",
-                    ConfirmText = "Буде видалено клієнтів: {0} (разом з їхніми обліковими записами). Продовжити?",
-                    SuccessText = "Видалено неактивних клієнтів: {1}.",
-                    Sql = @"
-DELETE ua
-FROM UserAccount ua
-JOIN Client c ON c.user_id = ua.user_id
-WHERE c.balance = 0
-  AND c.registered_at < DATEADD(DAY, -@days, CAST(GETDATE() AS DATE))
-  AND NOT EXISTS (SELECT 1 FROM Session s WHERE s.client_id = c.client_id)
-  AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.client_id = c.client_id);
-
-DELETE FROM Client
-WHERE balance = 0
-  AND registered_at < DATEADD(DAY, -@days, CAST(GETDATE() AS DATE))
-  AND NOT EXISTS (SELECT 1 FROM Session s WHERE s.client_id = Client.client_id)
-  AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.client_id = Client.client_id);"
                 }
             };
         }
