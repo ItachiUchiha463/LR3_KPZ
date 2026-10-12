@@ -29,7 +29,7 @@ namespace PC_Club.Forms
         public QueryForm(QueryDef q)
         {
             _q = q;
-            Text = q.Code + ". " + q.Title;
+            Text = q.Title;
             StartPosition = FormStartPosition.CenterParent;
             Size = new Size(1050, 650);
             MinimumSize = new Size(700, 450);
@@ -75,7 +75,7 @@ namespace PC_Club.Forms
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true,
-                Padding = new Padding(8, 4, 8, 8)
+                Padding = new Padding(8, 8, 8, 8)
             };
 
             foreach (QueryParam p in _q.Params)
@@ -106,13 +106,6 @@ namespace PC_Club.Forms
 
             Controls.Add(paramsPanel);
 
-            Controls.Add(new Label
-            {
-                Dock = DockStyle.Top,
-                Height = 32,
-                Padding = new Padding(8, 10, 8, 0),
-                Text = _q.Description ?? ""
-            });
         }
 
         // Підпис над полем

@@ -146,7 +146,6 @@ namespace PC_Club
                 {
                     Code = "U1", Roles = Everyone,
                     Title = "Вільні комп'ютери",
-                    Description = "Справні комп'ютери, на яких зараз ніхто не грає. Дані з відображення v_FreeComputers.",
                     Params = { Look("hall_id", "Зал", Lookups.Halls, true) },
                     Sql = @"
 SELECT hall           AS [Зал],
@@ -163,7 +162,6 @@ ORDER BY hall, number;"
                 {
                     Code = "U2", Roles = Everyone,
                     Title = "Де пограти в гру",
-                    Description = "Комп'ютери, на яких встановлена гра, і їхній стан зараз. Можна ввести частину назви гри або жанру.",
                     Params = { Txt("game", "Назва гри або жанр") },
                     Sql = @"
 SELECT g.title  AS [Гра],
@@ -190,7 +188,6 @@ ORDER BY g.title, h.name, c.number;"
                 {
                     Code = "U3", Roles = Everyone,
                     Title = "Каталог ігор",
-                    Description = "Ігри за жанром і віковим обмеженням. Оператор порівняння вибирається зі списку.",
                     Params =
                     {
                         Look("genre_id", "Жанр", Lookups.Genres, true),
@@ -213,7 +210,6 @@ ORDER BY ge.name, g.title;"
                 {
                     Code = "U4", Roles = Everyone,
                     Title = "Калькулятор вартості",
-                    Description = "Скільки коштує гра в кожному залі за кожним тарифом з урахуванням знижки.",
                     Params = { Look("hall_id", "Зал", Lookups.Halls, true) },
                     Sql = @"
 SELECT h.name             AS [Зал],
@@ -233,7 +229,6 @@ ORDER BY h.name, [До сплати, грн];"
                 {
                     Code = "U5", Roles = Everyone,
                     Title = "Топ-5 популярних ігор",
-                    Description = "Ігри, у які найчастіше грали за останні дні.",
                     Params = { Int("days", "За останні днів", 30, 1, 365) },
                     Sql = @"
 SELECT TOP 5
@@ -253,7 +248,6 @@ ORDER BY [Сесій] DESC, [Годин зіграно] DESC;"
                 {
                     Code = "U6", Roles = ClientOnly,
                     Title = "Мої сесії",
-                    Description = "Ваші сесії за період: де, за яким тарифом, у що грали і скільки заплатили.",
                     Params =
                     {
                         CurrentClient(),
@@ -281,7 +275,6 @@ ORDER BY started_at DESC;"
                 {
                     Code = "M1", Roles = Staff,
                     Title = "Хто зараз грає",
-                    Description = "Відкриті сесії: скільки клієнт уже грає, скільки набіжало і чи вистачає балансу. Дані з відображення v_ActiveSessions.",
                     Sql = @"
 SELECT client        AS [Клієнт],
        phone         AS [Телефон],
@@ -301,7 +294,6 @@ ORDER BY started_at;"
                 {
                     Code = "M4", Roles = Staff,
                     Title = "Рух коштів клієнта",
-                    Description = "Поповнення й оплати сесій клієнта в одному списку (об'єднання запитів UNION ALL).",
                     Params = { Look("client_id", "Клієнт", Lookups.Clients, false, null, 230) },
                     AutoRun = false,
                     Sql = @"
@@ -329,7 +321,6 @@ ORDER BY [Дата] DESC;"
                 {
                     Code = "M5", Roles = Staff,
                     Title = "Поповнення за період",
-                    Description = "Скільки поповнень прийнято і на яку суму, по працівниках і способах оплати.",
                     Params =
                     {
                         DateP("from", "З", -30),
@@ -355,7 +346,6 @@ ORDER BY [Працівник], [Спосіб оплати];"
                 {
                     Code = "M7", Roles = Staff, IsAction = true, AutoRun = false,
                     Title = "Реєстрація клієнта",
-                    Description = "INSERT: новий клієнт разом з обліковим записом. Логін і пароль = номер телефону.",
                     Params =
                     {
                         Txt("last", "Прізвище", true, 150),
@@ -395,7 +385,6 @@ WHERE c.phone = @phone;"
                 {
                     Code = "A1", Roles = AdminOnly,
                     Title = "Виручка по днях",
-                    Description = "Кількість сесій, години, виручка й середній чек за кожен день періоду.",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
 SELECT CAST(ended_at AS DATE)                 AS [Дата],
@@ -415,7 +404,6 @@ ORDER BY [Дата];"
                 {
                     Code = "A2", Roles = AdminOnly,
                     Title = "Виручка по залах",
-                    Description = "Підсумки по залах за період; показуються лише зали з виручкою більше заданої (HAVING).",
                     Params =
                     {
                         DateP("from", "З", -30),
@@ -441,7 +429,6 @@ ORDER BY [Виручка, грн] DESC;"
                 {
                     Code = "A3", Roles = AdminOnly,
                     Title = "Завантаженість комп'ютерів",
-                    Description = "Скільки сесій і годин було на кожному комп'ютері, включно з тими, що простоювали (LEFT JOIN).",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
 SELECT h.name   AS [Зал],
@@ -464,7 +451,6 @@ ORDER BY [Годин] DESC, [Зал], [Номер];"
                 {
                     Code = "A4", Roles = AdminOnly,
                     Title = "Найкращі клієнти",
-                    Description = "Клієнти, які витратили більше, ніж середній клієнт (підзапит у HAVING).",
                     Sql = @"
 SELECT c.last_name + N' ' + c.first_name AS [Клієнт],
        c.phone            AS [Телефон],
@@ -487,7 +473,6 @@ ORDER BY [Витрачено, грн] DESC;"
                 {
                     Code = "A5", Roles = AdminOnly,
                     Title = "Робота працівників",
-                    Description = "Скільки сесій відкрив і скільки коштів прийняв кожен працівник за період.",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
 SELECT e.last_name + N' ' + e.first_name AS [Працівник],
@@ -512,7 +497,6 @@ ORDER BY [Прийнято коштів, грн] DESC;"
                 {
                     Code = "A6", Roles = AdminOnly,
                     Title = "Ігри, яких бракує на комп'ютерах",
-                    Description = "Ігри, встановлені менш ніж на N комп'ютерах, зокрема ті, яких немає ніде.",
                     Params = { Int("max_pc", "Встановлено менш ніж на ПК", 5, 1, 1000) },
                     Sql = @"
 SELECT g.title     AS [Гра],
@@ -531,7 +515,6 @@ ORDER BY [Встановлено на ПК], [Гра];"
                 {
                     Code = "A7", Roles = AdminOnly,
                     Title = "Виручка залів по днях тижня",
-                    Description = "Перехресний запит (PIVOT): зали в рядках, дні тижня в колонках.",
                     Params = { DateP("from", "З", -60), DateP("to", "По", 0) },
                     Sql = @"
 SELECT hall AS [Зал],
@@ -555,7 +538,6 @@ ORDER BY [Разом, грн] DESC;"
                 {
                     Code = "A8", Roles = AdminOnly, IsAction = true, AutoRun = false,
                     Title = "Змінити ціни залів",
-                    Description = "UPDATE: підняти (або знизити, якщо відсоток від'ємний) ціну години. Ціна округлюється до гривні.",
                     Params =
                     {
                         Look("hall_id", "Зал", Lookups.Halls, true),
@@ -583,7 +565,6 @@ ORDER BY name;"
                 {
                     Code = "A9", Roles = AdminOnly, IsAction = true, AutoRun = false,
                     Title = "Видалити неактивних клієнтів",
-                    Description = "DELETE: клієнти, зареєстровані понад N днів тому, з нулем на балансі й без жодної сесії та поповнення. Видаляються разом з обліковими записами.",
                     Params = { Int("days", "Зареєстровані понад днів тому", 180, 1, 3650) },
                     PreviewSql = @"
 SELECT c.client_id     AS [Код],

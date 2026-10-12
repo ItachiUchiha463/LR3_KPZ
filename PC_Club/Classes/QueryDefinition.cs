@@ -40,7 +40,6 @@ namespace PC_Club
     {
         public string Code;              // U1, M4, A7 ...
         public string Title;
-        public string Description;
         public string Sql;
         public UserRole[] Roles;         // кому доступний
         public List<QueryParam> Params = new List<QueryParam>();
