@@ -214,9 +214,9 @@
     <EmbeddedResource Include="Forms\TariffsForm.resx">
       <DependentUpon>TariffsForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Reports\DepositsByEmployee.rdlc" />
-    <EmbeddedResource Include="Reports\RevenueByDay.rdlc" />
-    <EmbeddedResource Include="Reports\RevenueByHall.rdlc" />
+    <EmbeddedResource Include="Reports\Clients.rdlc" />
+    <EmbeddedResource Include="Reports\ClubLoad.rdlc" />
+    <EmbeddedResource Include="Reports\Finance.rdlc" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

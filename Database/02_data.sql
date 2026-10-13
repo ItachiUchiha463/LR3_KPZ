@@ -1,6 +1,6 @@
 ﻿/* Скрипт 2 з 4. Наповнення бази.
    Довідники (зали, ПК, жанри, ігри, тарифи, працівники) задані явно,
-   клієнти, сесії й поповнення генеруються за останні 180 днів відносно поточної дати.
+   клієнти, сесії й поповнення генеруються за останні 120 днів відносно поточної дати.
    Баланс клієнта = сума поповнень - сума завершених сесій (ніколи не від'ємний).
    Облікові записи: admin/admin, manager/manager, решта - логін і пароль = номер телефону.
    Запускати після 01_schema.sql на порожній базі. */
@@ -148,7 +148,7 @@ VALUES (N'Коваленко', N'Іван', N'0501112233', '2003-05-10', DATEADD
 -- Випадкові числа спершу записуються в таблицю, щоб NEWID() не обчислювався повторно при з'єднаннях
 CREATE TABLE #rnd (n INT PRIMARY KEY, r1 INT, r2 INT, r3 INT, r4 INT, r5 INT, female BIT);
 INSERT INTO #rnd
-SELECT TOP 200
+SELECT TOP 260
        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)),
        ABS(CHECKSUM(NEWID())), ABS(CHECKSUM(NEWID())), ABS(CHECKSUM(NEWID())),
        ABS(CHECKSUM(NEWID())), ABS(CHECKSUM(NEWID())),
@@ -189,17 +189,27 @@ CREATE TABLE #s (
     id INT IDENTITY, client_id INT, computer_id INT, employee_id INT, tariff_id INT,
     game_id INT NULL, started_at DATETIME, ended_at DATETIME NULL, total_price DECIMAL(8,2) NULL
 );
+CREATE INDEX IX_s_computer ON #s (computer_id, started_at);
+CREATE INDEX IX_s_client ON #s (client_id, started_at);
+
+-- Частина клієнтів перестала ходити в клуб 1-3 місяці тому
+CREATE TABLE #gone (client_id INT PRIMARY KEY, until DATETIME);
+INSERT INTO #gone (client_id, until)
+SELECT TOP 30 client_id, DATEADD(DAY, -(30 + ABS(CHECKSUM(NEWID())) % 60), @now)
+FROM Client
+WHERE client_id BETWEEN 2 AND 120
+ORDER BY NEWID();
 
 DECLARE @made INT = 0, @tries INT = 0, @d INT, @day DATE, @tf INT, @hour INT, @dur INT,
         @st DATETIME, @en DATETIME, @pc INT, @cl INT, @age INT, @gm INT, @em INT,
         @shift NVARCHAR(20), @price DECIMAL(8,2), @r INT;
 
-WHILE @made < 650 AND @tries < 20000
+WHILE @made < 4000 AND @tries < 80000
 BEGIN
     SET @tries += 1;
 
     -- мінімум з двох випадкових днів: свіжих сесій більше (клуб росте)
-    SELECT @d = MIN(v) FROM (VALUES (ABS(CHECKSUM(NEWID())) % 180), (ABS(CHECKSUM(NEWID())) % 180)) x(v);
+    SELECT @d = MIN(v) FROM (VALUES (ABS(CHECKSUM(NEWID())) % 120), (ABS(CHECKSUM(NEWID())) % 120)) x(v);
     SET @day = DATEADD(DAY, -@d, @today);
 
     -- з понеділка по четвер відвідувачів менше
@@ -240,6 +250,7 @@ BEGIN
     WHERE c.registered_at <= CAST(@st AS DATE)
       AND c.phone NOT LIKE N'09900000%'
       AND (@r >= 45 OR c.client_id <= 41)
+      AND NOT EXISTS (SELECT 1 FROM #gone g WHERE g.client_id = c.client_id AND @st >= g.until)
       AND NOT EXISTS (SELECT 1 FROM #s s
                       WHERE s.client_id = c.client_id AND s.started_at < @en AND s.ended_at > @st)
     ORDER BY NEWID();
@@ -344,6 +355,7 @@ BEGIN
     JOIN #bal b ON b.client_id = c.client_id
     WHERE c.phone NOT LIKE N'09900000%'
       AND (@k >= 2 OR b.bal < 40)
+      AND NOT EXISTS (SELECT 1 FROM #gone g WHERE g.client_id = c.client_id)
       AND EXISTS (SELECT 1 FROM #s s WHERE s.client_id = c.client_id)
       AND NOT EXISTS (SELECT 1 FROM #s s
                       WHERE s.client_id = c.client_id AND (s.ended_at IS NULL OR s.ended_at > @st))
@@ -413,7 +425,7 @@ FROM Client c JOIN UserAccount u ON u.login = c.phone AND u.role_id = 3;
 UPDATE UserAccount
 SET password_hash = CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CAST(login AS VARCHAR(30))), 2);
 
-DROP TABLE #rnd, #s, #bal, #d;
+DROP TABLE #rnd, #s, #bal, #d, #gone;
 GO
 
 -- Перевірка

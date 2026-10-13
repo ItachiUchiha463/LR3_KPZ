@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Windows.Forms;
 using Microsoft.Reporting.WinForms;
@@ -42,19 +43,26 @@ namespace PC_Club.Forms
                 return;
             }
 
-            DataTable data;
+            var sources = new List<ReportDataSource>();
             try
             {
-                data = Db.GetTable(_report.Sql, Db.P("@from", from), Db.P("@to", to));
+                Cursor = Cursors.WaitCursor;
+                foreach (var ds in _report.DataSets)
+                    sources.Add(new ReportDataSource(ds.Key, Db.GetTable(ds.Value, Db.P("@from", from), Db.P("@to", to))));
             }
             catch (Exception ex)
             {
                 MessageBox.Show(Errors.Friendly(ex), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
 
             reportViewer.LocalReport.DataSources.Clear();
-            reportViewer.LocalReport.DataSources.Add(new ReportDataSource(_report.DataSetName, data));
+            foreach (ReportDataSource source in sources)
+                reportViewer.LocalReport.DataSources.Add(source);
             reportViewer.LocalReport.SetParameters(new[]
             {
                 new ReportParameter("PeriodFrom", from.ToString("dd.MM.yyyy")),

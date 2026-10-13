@@ -1,43 +1,288 @@
 ﻿/* Скрипт 5. Дані для звітів (ПР5)
-   Звіти будуються в програмі (RDLC), а ці запити дають їм рядки.
-   Групування, підсумки й діаграми рахує сам звіт, тому запити повертають
-   окремі сесії чи поповнення без GROUP BY.
-   Назви колонок англійською: за ними звіт знаходить поля свого набору даних. */
+   Звіти будуються в програмі (RDLC), ці запити дають їм рядки.
+   Кожен звіт має кілька наборів даних; назва набору вказана над запитом.
+   Назви колонок англійською: за ними звіт знаходить поля свого набору. */
 
 USE PCClub;
 GO
 
+-- Звіт «Завантаженість клубу», набір даних Load
 DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+WITH days AS (
+    SELECT TOP (DATEDIFF(DAY, @from, @to) + 1)
+           DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, CAST(@from AS DATE)) AS d
+    FROM sys.all_objects
+),
+hours AS (
+    SELECT TOP 24 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS h
+    FROM sys.all_objects
+),
+halls AS (
+    SELECT hl.name AS hall, COUNT(c.computer_id) AS pcs
+    FROM Hall hl
+    LEFT JOIN Computer c ON c.hall_id = hl.hall_id
+    GROUP BY hl.name
+),
+capacity AS (
+    SELECT hs.hall,
+           DATEDIFF(DAY, 0, dd.d) % 7 AS dow,
+           hr.h AS hr,
+           COUNT(*) * MAX(hs.pcs) AS pcs_hours
+    FROM halls hs
+    CROSS JOIN days dd
+    CROSS JOIN hours hr
+    WHERE DATEADD(HOUR, hr.h, CAST(dd.d AS DATETIME)) < GETDATE()
+    GROUP BY hs.hall, DATEDIFF(DAY, 0, dd.d) % 7, hr.h
+),
+steps AS (
+    SELECT TOP 12 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS k
+    FROM sys.all_objects
+),
+parts AS (
+    SELECT h.name AS hall,
+           x.slot,
+           s.started_at,
+           ISNULL(s.ended_at, GETDATE()) AS finished
+    FROM Session s
+    JOIN Computer c ON c.computer_id = s.computer_id
+    JOIN Hall h     ON h.hall_id = c.hall_id
+    CROSS JOIN steps st
+    CROSS APPLY (SELECT DATEADD(HOUR, st.k, DATEADD(HOUR, DATEDIFF(HOUR, 0, s.started_at), 0)) AS slot) x
+    WHERE s.started_at < DATEADD(DAY, 1, @to)
+      AND ISNULL(s.ended_at, GETDATE()) > @from
+      AND x.slot < ISNULL(s.ended_at, GETDATE())
+      AND x.slot >= @from
+      AND x.slot < DATEADD(DAY, 1, @to)
+      AND x.slot < GETDATE()
+),
+busy AS (
+    SELECT hall,
+           DATEDIFF(DAY, 0, slot) % 7 AS dow,
+           DATEPART(HOUR, slot)       AS hr,
+           SUM(DATEDIFF(MINUTE,
+                        CASE WHEN started_at > slot THEN started_at ELSE slot END,
+                        CASE WHEN finished < DATEADD(HOUR, 1, slot) THEN finished ELSE DATEADD(HOUR, 1, slot) END)) / 60.0 AS hours
+    FROM parts
+    GROUP BY hall, DATEDIFF(DAY, 0, slot) % 7, DATEPART(HOUR, slot)
+),
+agg AS (
+    SELECT cp.hall AS Hall,
+           cp.dow  AS DayOfWeek,
+           CHOOSE(cp.dow + 1, N'Пн', N'Вт', N'Ср', N'Чт', N'Пт', N'Сб', N'Нд') AS DayName,
+           CAST(cp.hr AS INT) AS Hour,
+           CAST(ISNULL(b.hours, 0) AS DECIMAL(12,2)) AS BusyHours,
+           CAST(cp.pcs_hours AS DECIMAL(12,2))       AS CapacityHours
+    FROM capacity cp
+    LEFT JOIN busy b ON b.hall = cp.hall AND b.dow = cp.dow AND b.hr = cp.hr
+)
+SELECT Hall, DayOfWeek, DayName, Hour, BusyHours, CapacityHours FROM agg;
+GO
 
--- 1. Виручка за період (набір даних Sessions)
-SELECT CAST(ended_at AS DATE) AS SessionDate,
-       hall                   AS Hall,
-       hours                  AS Hours,
-       total_price            AS TotalPrice
+-- Звіт «Завантаженість клубу», набір даних LoadKpi
+DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+WITH days AS (
+    SELECT TOP (DATEDIFF(DAY, @from, @to) + 1)
+           DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, CAST(@from AS DATE)) AS d
+    FROM sys.all_objects
+),
+hours AS (
+    SELECT TOP 24 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS h
+    FROM sys.all_objects
+),
+halls AS (
+    SELECT hl.name AS hall, COUNT(c.computer_id) AS pcs
+    FROM Hall hl
+    LEFT JOIN Computer c ON c.hall_id = hl.hall_id
+    GROUP BY hl.name
+),
+capacity AS (
+    SELECT hs.hall,
+           DATEDIFF(DAY, 0, dd.d) % 7 AS dow,
+           hr.h AS hr,
+           COUNT(*) * MAX(hs.pcs) AS pcs_hours
+    FROM halls hs
+    CROSS JOIN days dd
+    CROSS JOIN hours hr
+    WHERE DATEADD(HOUR, hr.h, CAST(dd.d AS DATETIME)) < GETDATE()
+    GROUP BY hs.hall, DATEDIFF(DAY, 0, dd.d) % 7, hr.h
+),
+steps AS (
+    SELECT TOP 12 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS k
+    FROM sys.all_objects
+),
+parts AS (
+    SELECT h.name AS hall,
+           x.slot,
+           s.started_at,
+           ISNULL(s.ended_at, GETDATE()) AS finished
+    FROM Session s
+    JOIN Computer c ON c.computer_id = s.computer_id
+    JOIN Hall h     ON h.hall_id = c.hall_id
+    CROSS JOIN steps st
+    CROSS APPLY (SELECT DATEADD(HOUR, st.k, DATEADD(HOUR, DATEDIFF(HOUR, 0, s.started_at), 0)) AS slot) x
+    WHERE s.started_at < DATEADD(DAY, 1, @to)
+      AND ISNULL(s.ended_at, GETDATE()) > @from
+      AND x.slot < ISNULL(s.ended_at, GETDATE())
+      AND x.slot >= @from
+      AND x.slot < DATEADD(DAY, 1, @to)
+      AND x.slot < GETDATE()
+),
+busy AS (
+    SELECT hall,
+           DATEDIFF(DAY, 0, slot) % 7 AS dow,
+           DATEPART(HOUR, slot)       AS hr,
+           SUM(DATEDIFF(MINUTE,
+                        CASE WHEN started_at > slot THEN started_at ELSE slot END,
+                        CASE WHEN finished < DATEADD(HOUR, 1, slot) THEN finished ELSE DATEADD(HOUR, 1, slot) END)) / 60.0 AS hours
+    FROM parts
+    GROUP BY hall, DATEDIFF(DAY, 0, slot) % 7, DATEPART(HOUR, slot)
+),
+agg AS (
+    SELECT cp.hall AS Hall,
+           cp.dow  AS DayOfWeek,
+           CHOOSE(cp.dow + 1, N'Пн', N'Вт', N'Ср', N'Чт', N'Пт', N'Сб', N'Нд') AS DayName,
+           CAST(cp.hr AS INT) AS Hour,
+           CAST(ISNULL(b.hours, 0) AS DECIMAL(12,2)) AS BusyHours,
+           CAST(cp.pcs_hours AS DECIMAL(12,2))       AS CapacityHours
+    FROM capacity cp
+    LEFT JOIN busy b ON b.hall = cp.hall AND b.dow = cp.dow AND b.hr = cp.hr
+)
+SELECT (SELECT SUM(BusyHours) / NULLIF(SUM(CapacityHours), 0) FROM agg) AS AvgLoad,
+       p.DayName AS PeakDay,
+       p.Hour    AS PeakHour,
+       p.Load    AS PeakLoad,
+       h.Hall    AS TopHall,
+       h.Load    AS TopHallLoad
+FROM (SELECT TOP 1 DayName, Hour, SUM(BusyHours) / NULLIF(SUM(CapacityHours), 0) AS Load
+      FROM agg GROUP BY DayOfWeek, DayName, Hour ORDER BY Load DESC) p
+CROSS JOIN (SELECT TOP 1 Hall, SUM(BusyHours) / NULLIF(SUM(CapacityHours), 0) AS Load
+            FROM agg GROUP BY Hall ORDER BY Load DESC) h;
+GO
+
+-- Звіт «Фінанси за період», набір даних Sessions
+DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+SELECT CAST(ended_at AS DATE)                                  AS Day,
+       hall                                                    AS Hall,
+       total_price                                             AS Revenue,
+       CAST(price_per_hour * minutes / 60.0 AS DECIMAL(10,2))  AS FullPrice
 FROM v_SessionDetails
 WHERE total_price IS NOT NULL
   AND ended_at >= @from
   AND ended_at < DATEADD(DAY, 1, @to);
+GO
 
--- 2. Виручка по залах (набір даних Sessions)
-SELECT hall                             AS Hall,
-       DATEDIFF(DAY, 0, ended_at) % 7   AS DayOfWeek,
-       CHOOSE(DATEDIFF(DAY, 0, ended_at) % 7 + 1,
-              N'Пн', N'Вт', N'Ср', N'Чт', N'Пт', N'Сб', N'Нд') AS DayName,
-       hours                            AS Hours,
-       total_price                      AS TotalPrice
-FROM v_SessionDetails
-WHERE total_price IS NOT NULL
-  AND ended_at >= @from
-  AND ended_at < DATEADD(DAY, 1, @to);
-
--- 3. Поповнення по працівниках (набір даних Deposits)
-SELECT paid_at  AS PaidAt,
-       employee AS Employee,
+-- Звіт «Фінанси за період», набір даних Deposits
+DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+SELECT employee AS Employee,
        method   AS Method,
-       client   AS Client,
        amount   AS Amount
 FROM v_DepositDetails
 WHERE paid_at >= @from
   AND paid_at < DATEADD(DAY, 1, @to);
+GO
+
+-- Звіт «Фінанси за період», набір даних Summary
+DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+SELECT (SELECT ISNULL(SUM(total_price), 0) FROM Session
+         WHERE ended_at >= @from AND ended_at < DATEADD(DAY, 1, @to))          AS Revenue,
+       (SELECT ISNULL(SUM(total_price), 0) FROM Session
+         WHERE ended_at >= DATEADD(DAY, -(DATEDIFF(DAY, @from, @to) + 1), @from) AND ended_at < @from)             AS PrevRevenue,
+       (SELECT COUNT(*) FROM Session
+         WHERE ended_at >= @from AND ended_at < DATEADD(DAY, 1, @to))          AS Sessions,
+       (SELECT COUNT(*) FROM Session
+         WHERE ended_at >= DATEADD(DAY, -(DATEDIFF(DAY, @from, @to) + 1), @from) AND ended_at < @from)             AS PrevSessions,
+       (SELECT ISNULL(SUM(amount), 0) FROM Deposit
+         WHERE paid_at >= @from AND paid_at < DATEADD(DAY, 1, @to))            AS Deposits,
+       (SELECT ISNULL(SUM(amount), 0) FROM Deposit
+         WHERE paid_at >= DATEADD(DAY, -(DATEDIFF(DAY, @from, @to) + 1), @from) AND paid_at < @from)               AS PrevDeposits,
+       (SELECT ISNULL(SUM(price_per_hour * minutes / 60.0 - total_price), 0) FROM v_SessionDetails
+         WHERE total_price IS NOT NULL
+           AND ended_at >= @from AND ended_at < DATEADD(DAY, 1, @to))          AS Discounts,
+       (SELECT ISNULL(SUM(balance), 0) FROM Client)                            AS Balances;
+GO
+
+-- Звіт «Клієнтська база», набір даних Weekly
+DECLARE @from DATE = DATEADD(DAY, -90, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+WITH visits AS (
+    SELECT DISTINCT s.client_id,
+           DATEADD(DAY, -(DATEDIFF(DAY, 0, s.started_at) % 7), CAST(s.started_at AS DATE)) AS WeekStart
+    FROM Session s
+    WHERE s.started_at >= @from AND s.started_at < DATEADD(DAY, 1, @to)
+)
+SELECT v.WeekStart,
+       SUM(CASE WHEN v.WeekStart <  DATEADD(DAY, 30, c.registered_at) THEN 1 ELSE 0 END) AS NewClients,
+       SUM(CASE WHEN v.WeekStart >= DATEADD(DAY, 30, c.registered_at) THEN 1 ELSE 0 END) AS ReturningClients
+FROM visits v
+JOIN Client c ON c.client_id = v.client_id
+GROUP BY v.WeekStart;
+GO
+
+-- Звіт «Клієнтська база», набір даних Top
+DECLARE @from DATE = DATEADD(DAY, -90, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+WITH weeks AS (
+    SELECT TOP (DATEDIFF(DAY, DATEADD(DAY, -(DATEDIFF(DAY, 0, @from) % 7), @from), @to) / 7 + 1)
+           DATEADD(DAY, 7 * (ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1),
+                   DATEADD(DAY, -(DATEDIFF(DAY, 0, @from) % 7), @from)) AS WeekStart
+    FROM sys.all_objects
+),
+top10 AS (
+    SELECT TOP 10 client_id, SUM(total_price) AS spent, COUNT(*) AS visits
+    FROM Session
+    WHERE total_price IS NOT NULL
+      AND started_at >= @from AND started_at < DATEADD(DAY, 1, @to)
+    GROUP BY client_id
+    ORDER BY spent DESC
+)
+SELECT c.last_name + N' ' + c.first_name AS Client,
+       c.phone   AS Phone,
+       t.visits  AS Visits,
+       t.spent   AS Spent,
+       w.WeekStart,
+       ISNULL((SELECT SUM(s.total_price) FROM Session s
+               WHERE s.client_id = t.client_id
+                 AND s.total_price IS NOT NULL
+                 AND s.started_at >= w.WeekStart AND s.started_at < DATEADD(DAY, 7, w.WeekStart)
+                 AND s.started_at >= @from AND s.started_at < DATEADD(DAY, 1, @to)), 0) AS WeekSpent
+FROM top10 t
+JOIN Client c ON c.client_id = t.client_id
+CROSS JOIN weeks w;
+GO
+
+-- Звіт «Клієнтська база», набір даних Lost
+DECLARE @from DATE = DATEADD(DAY, -90, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+SELECT TOP 25
+       c.last_name + N' ' + c.first_name AS Client,
+       c.phone                           AS Phone,
+       x.last_visit                      AS LastVisit,
+       DATEDIFF(DAY, x.last_visit, @to)  AS DaysAway,
+       x.visits                          AS Visits,
+       x.spent                           AS Spent,
+       c.balance                         AS Balance
+FROM (SELECT client_id, MAX(started_at) AS last_visit, COUNT(*) AS visits, SUM(ISNULL(total_price, 0)) AS spent
+      FROM Session
+      WHERE started_at < DATEADD(DAY, 1, @to)
+      GROUP BY client_id) x
+JOIN Client c ON c.client_id = x.client_id
+WHERE x.last_visit < DATEADD(DAY, -30, @to)
+  AND x.visits >= 3
+ORDER BY x.spent DESC;
+GO
+
+-- Звіт «Клієнтська база», набір даних ClientKpi
+DECLARE @from DATE = DATEADD(DAY, -90, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
+WITH period AS (
+    SELECT client_id, total_price
+    FROM Session
+    WHERE started_at >= @from AND started_at < DATEADD(DAY, 1, @to)
+)
+SELECT (SELECT COUNT(DISTINCT client_id) FROM period)                        AS Active,
+       (SELECT COUNT(*) FROM Client
+         WHERE registered_at >= @from AND registered_at < DATEADD(DAY, 1, @to))  AS NewClients,
+       (SELECT COUNT(*) FROM period)                                         AS Visits,
+       (SELECT ISNULL(SUM(total_price), 0) FROM period)                      AS Spent,
+       (SELECT COUNT(*) FROM (SELECT client_id FROM Session
+                              WHERE started_at < DATEADD(DAY, 1, @to)
+                              GROUP BY client_id
+                              HAVING MAX(started_at) < DATEADD(DAY, -30, @to)
+                                 AND COUNT(*) >= 3) l)                       AS Lost;
 GO
