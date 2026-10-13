@@ -50,6 +50,11 @@ namespace PC_Club.Forms
             var status = new StatusStrip();
             _count.Text = "Рядків: 0";
             status.Items.Add(_count);
+            status.Items.Add(new ToolStripStatusLabel { Spring = true });
+            var export = new ToolStripDropDownButton("Експорт") { DisplayStyle = ToolStripItemDisplayStyle.Text };
+            export.DropDownItems.Add("Вивантажити в Excel", null, (s, e) => TableExport.Export(this, _grid, Text, true));
+            export.DropDownItems.Add("Вивантажити в Word / PDF", null, (s, e) => TableExport.Export(this, _grid, Text, false));
+            status.Items.Add(export);
             Controls.Add(status);
 
             var paramsPanel = new FlowLayoutPanel

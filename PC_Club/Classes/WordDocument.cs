@@ -38,6 +38,58 @@ namespace PC_Club
             _doc.Content.ParagraphFormat.SpaceBefore = 0;
         }
 
+        public WordDocument()
+        {
+            Type type = Type.GetTypeFromProgID("Word.Application");
+            if (type == null)
+                throw new InvalidOperationException("Microsoft Word не встановлено: сформувати документ неможливо.");
+
+            _app = Activator.CreateInstance(type);
+            _app.Visible = false;
+            _app.DisplayAlerts = 0;
+            _doc = _app.Documents.Add();
+
+            _doc.PageSetup.Orientation = 1;
+            _doc.PageSetup.LeftMargin = _app.CentimetersToPoints(1.5f);
+            _doc.PageSetup.RightMargin = _app.CentimetersToPoints(1.5f);
+            _doc.PageSetup.TopMargin = _app.CentimetersToPoints(1.5f);
+            _doc.PageSetup.BottomMargin = _app.CentimetersToPoints(1.5f);
+            _tabPosition = _doc.PageSetup.PageWidth - _doc.PageSetup.LeftMargin - _doc.PageSetup.RightMargin;
+
+            _doc.Content.Font.Name = "Arial";
+            _doc.Content.Font.Size = 9;
+            _doc.Content.ParagraphFormat.SpaceAfter = 0;
+            _doc.Content.ParagraphFormat.SpaceBefore = 0;
+        }
+
+        public void Table(string[] headers, System.Collections.Generic.List<string[]> rows, bool[] alignRight)
+        {
+            var text = new System.Text.StringBuilder();
+            text.Append(string.Join("\t", headers));
+            foreach (string[] row in rows)
+                text.Append('\r').Append(string.Join("\t", row));
+
+            int start = _doc.Content.End - 1;
+            _doc.Content.InsertAfter(text.ToString());
+            dynamic range = _doc.Range(start, _doc.Content.End - 1);
+            dynamic table = range.ConvertToTable(1, rows.Count + 1, headers.Length);
+
+            table.Range.Font.Size = 8;
+            table.Range.Font.Bold = 0;
+            table.Borders.Enable = 1;
+            table.Rows[1].Range.Font.Bold = 1;
+            table.Rows[1].HeadingFormat = -1;
+            table.Rows[1].Shading.BackgroundPatternColor = 15132390;
+            for (int i = 0; i < headers.Length; i++)
+            {
+                if (!alignRight[i]) continue;
+                table.Columns[i + 1].Select();
+                _app.Selection.ParagraphFormat.Alignment = 2;
+            }
+            table.AutoFitBehavior(1);
+            table.AutoFitBehavior(2);
+        }
+
         private void Write(string text, bool bold, float size, int alignment, bool tab)
         {
             dynamic p = _doc.Content.Paragraphs.Add();

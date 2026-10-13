@@ -80,6 +80,7 @@
     <Compile Include="Forms\QueryForm.cs" />
     <Compile Include="Classes\Receipts.cs" />
     <Compile Include="Classes\RecordEditor.cs" />
+    <Compile Include="Classes\TableExport.cs" />
     <Compile Include="Classes\WordDocument.cs" />
     <Compile Include="Classes\ReportCatalog.cs" />
     <Compile Include="Forms\ComputerGamesForm.cs">

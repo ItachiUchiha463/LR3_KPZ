@@ -32,6 +32,17 @@ namespace PC_Club.Forms
             bindingSource1.CurrentChanged += bindingSource1_CurrentChanged;
             bindingSource1.ListChanged += (s, ev) => UpdateCounter();
             FormClosing += BaseTableForm_FormClosing;
+
+            bindingNavigator1.Items.Add(new ToolStripSeparator());
+            bindingNavigator1.Items.Add(new ToolStripButton("В Excel", null, (s, e) => TableExport.Export(this, dgv, ExportTitle, true))
+                                        { DisplayStyle = ToolStripItemDisplayStyle.Text });
+            bindingNavigator1.Items.Add(new ToolStripButton("В Word", null, (s, e) => TableExport.Export(this, dgv, ExportTitle, false))
+                                        { DisplayStyle = ToolStripItemDisplayStyle.Text });
+        }
+
+        private string ExportTitle
+        {
+            get { return Text.Replace(" (тільки перегляд)", ""); }
         }
 
         private string Field
