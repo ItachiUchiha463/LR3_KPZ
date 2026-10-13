@@ -30,6 +30,6 @@ namespace PC_Club.Forms
             AddLookup("tariff_id", Lookups.Tariffs(), "Тариф");
             AddLookup("game_id", Lookups.Games(), "Гра");
         }
-        
+
     }
 }

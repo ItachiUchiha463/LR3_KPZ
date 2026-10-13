@@ -8,8 +8,6 @@ using System.Windows.Forms;
 
 namespace PC_Club.Forms
 {
-    // Універсальна форма запиту: поля параметрів будуються з опису QueryDef,
-    // запит виконується через SqlCommand з параметрами, результат показується в DataGridView
     public class QueryForm : Form
     {
         private readonly QueryDef _q;
@@ -36,12 +34,8 @@ namespace PC_Club.Forms
             BuildUi();
         }
 
-        // ---------- Побудова інтерфейсу ----------
-
         private void BuildUi()
         {
-            // Порядок додавання важливий для Dock: спочатку те, що заповнює решту,
-            // потім нижні панелі, потім верхні (останнім додається найвища)
 
             _grid.Dock = DockStyle.Fill;
             _grid.ReadOnly = true;
@@ -58,7 +52,6 @@ namespace PC_Club.Forms
             status.Items.Add(_count);
             Controls.Add(status);
 
-            // Параметри
             var paramsPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
@@ -70,7 +63,7 @@ namespace PC_Club.Forms
 
             foreach (QueryParam p in _q.Params)
             {
-                if (p.Kind == ParamKind.CurrentClient) continue;   // поля немає
+                if (p.Kind == ParamKind.CurrentClient) continue;
 
                 Control input = CreateInput(p);
                 _inputs[p.Name] = input;
@@ -135,7 +128,6 @@ namespace PC_Club.Forms
             Controls.Add(paramsPanel);
         }
 
-        // Підпис над полем
         private Control WithCaption(string caption, Control input, int width)
         {
             int captionWidth = TextRenderer.MeasureText(caption, Font).Width + 4;
@@ -204,7 +196,6 @@ namespace PC_Club.Forms
                         };
                         combo.DataSource = LoadLookup(p);
 
-                        // вибір за замовчуванням ставиться, коли форма вже показана
                         _lookupDefaults.Add(() =>
                         {
                             if (def != null) combo.SelectedValue = def;
@@ -220,7 +211,6 @@ namespace PC_Club.Forms
             }
         }
 
-        // Список для Lookup (за потреби з пунктом «Усі»)
         private static DataTable LoadLookup(QueryParam p)
         {
             DataTable t;
@@ -252,8 +242,6 @@ namespace PC_Club.Forms
             foreach (Action apply in _lookupDefaults) apply();
             if (_q.AutoRun) Run();
         }
-
-        // ---------- Збирання значень параметрів ----------
 
         private bool Fail(Control c, string message)
         {
@@ -309,7 +297,7 @@ namespace PC_Club.Forms
                             else if (!mtb.MaskCompleted)
                                 return Fail(c, "Поле «" + p.Caption + "» має містити 10 цифр.");
                             else
-                                values[p.Name] = mtb.Text;     // без маски: лише цифри
+                                values[p.Name] = mtb.Text;
                             break;
                         }
 
@@ -318,7 +306,6 @@ namespace PC_Club.Forms
                             var combo = (ComboBox)c;
                             object v = combo.SelectedValue;
 
-                            // якщо значення набрали вручну, шукаємо його у списку за точним збігом
                             if (v == null && combo.Text.Trim() != "")
                             {
                                 int i = combo.FindStringExact(combo.Text.Trim());
@@ -350,13 +337,10 @@ namespace PC_Club.Forms
             return true;
         }
 
-        // Нові об'єкти параметрів для кожної команди (один SqlParameter не можна додати у дві команди)
         private static SqlParameter[] MakeParams(Dictionary<string, object> values)
         {
             return values.Select(v => Db.P("@" + v.Key, v.Value)).ToArray();
         }
-
-        // ---------- Виконання ----------
 
         private void Run()
         {
@@ -386,7 +370,6 @@ namespace PC_Club.Forms
             }
         }
 
-        // INSERT / UPDATE / DELETE: попередній перегляд → підтвердження → виконання → результат
         private void RunAction(Dictionary<string, object> values)
         {
             int previewCount = 0;
@@ -421,8 +404,6 @@ namespace PC_Club.Forms
             else if (_q.PreviewSql != null)
                 ShowTable(Db.GetTable(_q.PreviewSql, MakeParams(values)));
         }
-
-        // ---------- Показ результату ----------
 
         private void ShowTable(DataTable table)
         {
@@ -545,7 +526,6 @@ namespace PC_Club.Forms
             return ok;
         }
 
-        // Чи є в колонці дат значення з часом (інакше показуємо лише дату)
         private static bool HasTime(DataTable table, string column)
         {
             foreach (DataRow r in table.Rows)
@@ -562,7 +542,6 @@ namespace PC_Club.Forms
             return Convert.ToString(row.Cells[column].Value);
         }
 
-        // Підсвічування: проблемні рядки рожеві, вільні ПК зелені, від'ємні суми червоним
         private void Grid_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0) return;

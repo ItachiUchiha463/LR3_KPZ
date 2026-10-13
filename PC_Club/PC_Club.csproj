@@ -76,7 +76,7 @@
     <Compile Include="Classes\Nav.cs" />
     <Compile Include="Classes\QueryCatalog.cs" />
     <Compile Include="Classes\QueryDefinition.cs" />
-    <Compile Include="Classes\QueryForm.cs" />
+    <Compile Include="Forms\QueryForm.cs" />
     <Compile Include="Classes\RecordEditor.cs" />
     <Compile Include="Classes\ReportCatalog.cs" />
     <Compile Include="Forms\ComputerGamesForm.cs">
@@ -212,6 +212,7 @@
       <DependentUpon>TariffsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Reports\DepositsByEmployee.rdlc" />
+    <EmbeddedResource Include="Reports\Report1.rdlc" />
     <EmbeddedResource Include="Reports\RevenueByDay.rdlc" />
     <EmbeddedResource Include="Reports\RevenueByHall.rdlc" />
     <EmbeddedResource Include="Properties\Resources.resx">

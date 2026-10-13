@@ -6,17 +6,15 @@ namespace PC_Club
 {
     public enum UserRole { Admin, Manager, User }
 
-    // Поточний користувач: хто увійшов і що йому дозволено
     public static class CurrentUser
     {
         public static UserRole Role = UserRole.User;
         public static int UserId;
-        public static int? EmployeeId;     // для адміністратора й менеджера
-        public static int? ClientId;       // для клієнта
+        public static int? EmployeeId;
+        public static int? ClientId;
         public static string Login = "";
         public static string DisplayName = "";
 
-        // Заповнюється з результату запиту входу
         public static void SignIn(DataRow r, string login)
         {
             UserId = Convert.ToInt32(r["user_id"]);
@@ -58,7 +56,6 @@ namespace PC_Club
             }
         }
 
-        // Що редагує менеджер
         private static readonly string[] ManagerEdit =
             { "ClientsForm", "SessionsForm", "DepositsForm" };
 
@@ -74,4 +71,4 @@ namespace PC_Club
             return false;
         }
     }
-} 
+}

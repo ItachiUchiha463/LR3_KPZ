@@ -5,7 +5,6 @@ namespace PC_Club.Forms
 {
     public partial class LoginForm : Form
     {
-        // Л1: перевірка логіна й пароля, роль і власник облікового запису
         private const string LoginSql = @"
 SELECT ua.user_id,
        r.name                            AS role_name,

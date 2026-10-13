@@ -71,7 +71,7 @@ namespace PC_Club
                 case 18456:
                     return "Не вдалося увійти в базу даних: перевірте логін і пароль у рядку підключення.";
                 case 50010:
-                    return text;   
+                    return text;
 
                 default:
                     return "Помилка бази даних: " + text;

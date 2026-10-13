@@ -5,7 +5,6 @@ using System.Linq;
 
 namespace PC_Club
 {
-    // Каталог запитів ЛР4: текст SQL, параметри й ролі, яким запит доступний
     public static class QueryCatalog
     {
         private static readonly UserRole[] Everyone = { UserRole.User, UserRole.Manager, UserRole.Admin };
@@ -24,8 +23,6 @@ namespace PC_Club
         {
             return All.Where(q => q.Roles.Contains(role));
         }
-
-        // ---------- Короткі способи описати параметр ----------
 
         private static QueryParam Txt(string name, string caption, bool required = false, int width = 180)
         {
@@ -60,7 +57,6 @@ namespace PC_Club
             };
         }
 
-        // Дата: сьогодні + offsetDays
         private static QueryParam DateP(string name, string caption, int offsetDays)
         {
             return new QueryParam
@@ -110,13 +106,10 @@ namespace PC_Club
             return new QueryParam { Name = "client_id", Caption = "Клієнт", Kind = ParamKind.CurrentClient };
         }
 
-        // ---------- Запити ----------
-
         private static List<QueryDef> Build()
         {
             return new List<QueryDef>
             {
-                // =============== КОРИСТУВАЧ (клієнт) ===============
 
                 new QueryDef
                 {
@@ -224,8 +217,6 @@ WHERE client_id = @client_id
 ORDER BY started_at DESC;"
                 },
 
-                // =============== МЕНЕДЖЕР (працівник зміни) ===============
-
                 new QueryDef
                 {
                     Code = "M1", Roles = Staff, ShowFilter = false,
@@ -308,8 +299,6 @@ FROM Client c
 JOIN UserAccount ua ON ua.user_id = c.user_id
 WHERE c.phone = @phone;"
                 },
-
-                // =============== АДМІНІСТРАТОР (власник) ===============
 
                 new QueryDef
                 {
