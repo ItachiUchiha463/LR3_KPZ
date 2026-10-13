@@ -281,7 +281,7 @@
             this.операціїНажToolStripMenuItem});
             this.menuOps.Location = new System.Drawing.Point(0, 0);
             this.menuOps.Name = "menuOps";
-            this.menuOps.Size = new System.Drawing.Size(1122, 30);
+            this.menuOps.Size = new System.Drawing.Size(1122, 28);
             this.menuOps.TabIndex = 8;
             this.menuOps.Text = "menuStrip1";
             // 
@@ -293,7 +293,7 @@
             this.menuFind,
             this.menuReset});
             this.операціїНажToolStripMenuItem.Name = "операціїНажToolStripMenuItem";
-            this.операціїНажToolStripMenuItem.Size = new System.Drawing.Size(154, 26);
+            this.операціїНажToolStripMenuItem.Size = new System.Drawing.Size(154, 24);
             this.операціїНажToolStripMenuItem.Text = "Операції з даними";
             // 
             // впорядкуванняToolStripMenuItem

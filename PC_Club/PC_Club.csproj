@@ -205,6 +205,9 @@
     <EmbeddedResource Include="Forms\LoginForm.resx">
       <DependentUpon>LoginForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\SessionsForm.resx">
       <DependentUpon>SessionsForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -212,7 +215,6 @@
       <DependentUpon>TariffsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Reports\DepositsByEmployee.rdlc" />
-    <EmbeddedResource Include="Reports\Report1.rdlc" />
     <EmbeddedResource Include="Reports\RevenueByDay.rdlc" />
     <EmbeddedResource Include="Reports\RevenueByHall.rdlc" />
     <EmbeddedResource Include="Properties\Resources.resx">
