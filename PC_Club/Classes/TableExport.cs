@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -74,7 +75,6 @@ namespace PC_Club
         {
             List<Column> cols = Columns(grid);
             List<DataGridViewRow> rows = Rows(grid).ToList();
-            int headerRow = 4;
 
             var data = new object[rows.Count + 1, cols.Count];
             for (int c = 0; c < cols.Count; c++) data[0, c] = cols[c].Header;
@@ -87,12 +87,31 @@ namespace PC_Club
                 throw new InvalidOperationException("Microsoft Excel не встановлено: вивантажити таблицю неможливо.");
 
             dynamic app = Activator.CreateInstance(type);
-            dynamic book = null;
             try
             {
                 app.Visible = false;
                 app.DisplayAlerts = false;
-                book = app.Workbooks.Add();
+                WriteWorkbook(app, cols, rows.Count, data, title, path);
+            }
+            finally
+            {
+                try { app.Quit(); } catch { }
+                try { Marshal.FinalReleaseComObject(app); } catch { }
+                app = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void WriteWorkbook(dynamic app, List<Column> cols, int rowCount, object[,] data, string title, string path)
+        {
+            const int headerRow = 4;
+            dynamic book = app.Workbooks.Add();
+            try
+            {
                 dynamic sheet = book.Worksheets[1];
                 sheet.Name = "Дані";
 
@@ -100,19 +119,18 @@ namespace PC_Club
                 sheet.Cells[1, 1].Font.Bold = true;
                 sheet.Cells[1, 1].Font.Size = 14;
                 sheet.Cells[2, 1].Value2 = "Сформовано: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm") +
-                                           "    Рядків: " + rows.Count;
+                                           "    Рядків: " + rowCount;
 
-                for (int c = 0; c < cols.Count; c++)
+                for (int c = 0; c < cols.Count && rowCount > 0; c++)
                 {
-                    if (rows.Count == 0) break;
-                    dynamic column = sheet.Range[sheet.Cells[headerRow + 1, c + 1], sheet.Cells[headerRow + rows.Count, c + 1]];
+                    dynamic column = sheet.Range[sheet.Cells[headerRow + 1, c + 1], sheet.Cells[headerRow + rowCount, c + 1]];
                     if (cols[c].IsDate) column.NumberFormat = cols[c].WithTime ? "dd.mm.yyyy hh:mm" : "dd.mm.yyyy";
                     else if (cols[c].IsMoney) column.NumberFormat = "#,##0.00";
                     else if (cols[c].IsNumber) column.NumberFormat = "0";
                     else column.NumberFormat = "@";
                 }
 
-                dynamic all = sheet.Range[sheet.Cells[headerRow, 1], sheet.Cells[headerRow + rows.Count, cols.Count]];
+                dynamic all = sheet.Range[sheet.Cells[headerRow, 1], sheet.Cells[headerRow + rowCount, cols.Count]];
                 all.Value2 = data;
                 all.Borders.LineStyle = 1;
 
@@ -136,15 +154,7 @@ namespace PC_Club
             }
             finally
             {
-                if (book != null)
-                {
-                    try { book.Close(false); } catch { }
-                    try { Marshal.FinalReleaseComObject(book); } catch { }
-                }
-                try { app.Quit(); } catch { }
-                try { Marshal.FinalReleaseComObject(app); } catch { }
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+                book.Saved = true;
             }
         }
 

@@ -1,6 +1,5 @@
-using System;
+﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace PC_Club
 {
@@ -12,8 +11,8 @@ namespace PC_Club
         private const int FormatDocx = 16;
         private const int FormatPdf = 17;
 
-        private readonly dynamic _app;
-        private readonly dynamic _doc;
+        private dynamic _app;
+        private dynamic _doc;
         private readonly float _tabPosition;
 
         public WordDocument(double pageWidthCm, double marginCm)
@@ -132,9 +131,11 @@ namespace PC_Club
         public void Dispose()
         {
             try { _doc.Close(0); } catch { }
-            try { Marshal.FinalReleaseComObject(_doc); } catch { }
+            _doc = null;
             try { _app.Quit(0); } catch { }
-            try { Marshal.FinalReleaseComObject(_app); } catch { }
+            _app = null;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
