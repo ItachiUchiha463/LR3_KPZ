@@ -22,6 +22,7 @@ namespace PC_Club.Forms
         private bool _dirty;
         private bool _switching;
         private string _lastSearchKey = "";
+        private bool _hasRowActions;
 
         public BaseTableForm()
         {
@@ -186,6 +187,28 @@ namespace PC_Club.Forms
         protected void ShowTimeIn(params string[] columns)
         {
             foreach (string c in columns) _withTime.Add(c);
+        }
+
+        protected void AddRowAction(string text, Action<DataRow> action)
+        {
+            if (!_hasRowActions)
+            {
+                bindingNavigator1.Items.Add(new ToolStripSeparator());
+                _hasRowActions = true;
+            }
+
+            var button = new ToolStripButton(text) { DisplayStyle = ToolStripItemDisplayStyle.Text };
+            button.Click += (s, e) =>
+            {
+                var current = bindingSource1.Current as DataRowView;
+                if (current == null || current.Row.RowState == DataRowState.Added)
+                {
+                    MessageBox.Show("Виберіть збережений запис у таблиці.", Text);
+                    return;
+                }
+                action(current.Row);
+            };
+            bindingNavigator1.Items.Add(button);
         }
 
         protected void SetReadOnly(bool readOnly)

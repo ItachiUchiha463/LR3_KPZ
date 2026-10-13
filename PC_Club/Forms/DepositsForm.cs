@@ -24,6 +24,9 @@ namespace PC_Club.Forms
             ShowTimeIn("paid_at");
             AddLookup("client_id", Lookups.Clients(), "Клієнт");
             AddLookup("employee_id", Lookups.Employees(), "Працівник");
+
+            AddRowAction("Квитанція (Word)", r => Receipts.Print(this, "deposit", Convert.ToInt32(r["deposit_id"]), false));
+            AddRowAction("Квитанція (PDF)", r => Receipts.Print(this, "deposit", Convert.ToInt32(r["deposit_id"]), true));
         }
     }
 }

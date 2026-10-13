@@ -29,6 +29,9 @@ namespace PC_Club.Forms
             AddLookup("employee_id", Lookups.Employees(), "Працівник");
             AddLookup("tariff_id", Lookups.Tariffs(), "Тариф");
             AddLookup("game_id", Lookups.Games(), "Гра");
+
+            AddRowAction("Чек (Word)", r => Receipts.Print(this, "session", Convert.ToInt32(r["session_id"]), false));
+            AddRowAction("Чек (PDF)", r => Receipts.Print(this, "session", Convert.ToInt32(r["session_id"]), true));
         }
 
     }
