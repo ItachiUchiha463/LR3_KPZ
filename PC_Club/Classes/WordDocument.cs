@@ -19,8 +19,6 @@ namespace PC_Club
         public WordDocument(double pageWidthCm, double marginCm)
         {
             Type type = Type.GetTypeFromProgID("Word.Application");
-            if (type == null)
-                throw new InvalidOperationException("Microsoft Word не встановлено: сформувати документ неможливо.");
 
             _app = Activator.CreateInstance(type);
             _app.Visible = false;
@@ -82,9 +80,11 @@ namespace PC_Club
         public void Dispose()
         {
             try { _doc.Close(0); } catch { }
-            try { _app.Quit(0); } catch { }
             try { Marshal.FinalReleaseComObject(_doc); } catch { }
+            try { _app.Quit(0); } catch { }
             try { Marshal.FinalReleaseComObject(_app); } catch { }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }
