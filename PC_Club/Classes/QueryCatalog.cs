@@ -105,6 +105,11 @@ namespace PC_Club
             return new QueryParam { Name = "client_id", Caption = "Клієнт", Kind = ParamKind.CurrentClient };
         }
 
+        private static QueryParam CurrentEmployee()
+        {
+            return new QueryParam { Name = "employee_id", Caption = "Працівник", Kind = ParamKind.CurrentEmployee };
+        }
+
         private static List<QueryDef> Build()
         {
             return new List<QueryDef>
@@ -208,18 +213,108 @@ ORDER BY [Сесій] DESC, [Годин зіграно] DESC;"
                     Code = "U6", Roles = ClientOnly,
                     Section = ClubSection,
                     Title = "Мої сесії",
-                    Params = { CurrentClient() },
-                    Sql = @"
-SELECT started_at  AS [Початок],
-       ended_at    AS [Завершення],
-       computer    AS [Комп'ютер],
-       tariff      AS [Тариф],
-       game        AS [Гра],
-       hours       AS [Годин],
-       total_price AS [Сума (грн)]
-FROM v_SessionDetails
-WHERE client_id = @client_id
-ORDER BY started_at DESC;"
+                    Params = { CurrentClient(), OptDate("from", "З"), OptDate("to", "По") },
+                    Procedure = "sp_GetSessions"
+                },
+
+                new QueryDef
+                {
+                    Code = "S1", Roles = Staff, ShowFilter = false, IsAction = true, AutoRun = false,
+                    Section = ShiftSection,
+                    Title = "Почати сесію",
+                    Params =
+                    {
+                        Look("client_id", "Клієнт", Lookups.Clients, false, null, 230),
+                        Look("computer_id", "Вільний комп'ютер", Lookups.FreeComputers, false, null, 260),
+                        Look("tariff_id", "Тариф", Lookups.Tariffs, false, () => 1, 130),
+                        new QueryParam
+                        {
+                            Name = "game_id", Caption = "Гра", Kind = ParamKind.Lookup,
+                            Source = Lookups.Games, Required = false, Width = 180
+                        },
+                        CurrentEmployee()
+                    },
+                    Procedure = "sp_StartSession",
+                    Output = "session_id",
+                    ConfirmText = "Почати сесію?",
+                    SuccessText = "Сесію № {2} розпочато.",
+                    ResultSql = @"
+SELECT client        AS [Клієнт],
+       computer      AS [Комп'ютер],
+       tariff        AS [Тариф],
+       game          AS [Гра],
+       started_at    AS [Початок],
+       current_price AS [Набіжало (грн)],
+       balance       AS [Баланс (грн)]
+FROM v_ActiveSessions
+WHERE session_id = @session_id;"
+                },
+
+                new QueryDef
+                {
+                    Code = "S2", Roles = Staff, ShowFilter = false, IsAction = true, AutoRun = false,
+                    Section = ShiftSection,
+                    Title = "Завершити сесію",
+                    Params =
+                    {
+                        Look("session_id", "Сесія", Lookups.ActiveSessions, false, null, 300),
+                        Dec("pay_amount", "Доплата (грн)", 0, 0, 10000),
+                        Look("method", "Спосіб оплати", Lookups.PayMethods, false, () => "Готівка", 110),
+                        CurrentEmployee()
+                    },
+                    PreviewSql = @"
+SELECT client        AS [Клієнт],
+       computer      AS [Комп'ютер],
+       tariff        AS [Тариф],
+       started_at    AS [Початок],
+       minutes       AS [Хвилин],
+       current_price AS [До сплати (грн)],
+       balance       AS [На рахунку (грн)],
+       @pay_amount   AS [Доплата (грн)],
+       CASE WHEN current_price > balance + @pay_amount
+            THEN current_price - balance - @pay_amount ELSE 0 END AS [Не вистачає (грн)]
+FROM v_ActiveSessions
+WHERE session_id = @session_id;",
+                    Procedure = "sp_CloseSession",
+                    Output = "total_price",
+                    OutputType = SqlDbType.Decimal,
+                    ConfirmText = "Завершити сесію й списати оплату?",
+                    SuccessText = "Сесію завершено. Сплачено {2:N2} грн.",
+                    ResultSql = @"
+SELECT d.client      AS [Клієнт],
+       d.computer    AS [Комп'ютер],
+       d.started_at  AS [Початок],
+       d.ended_at    AS [Завершення],
+       d.minutes     AS [Хвилин],
+       d.total_price AS [Сплачено (грн)],
+       c.balance     AS [Залишок (грн)]
+FROM v_SessionDetails d
+JOIN Client c ON c.client_id = d.client_id
+WHERE d.session_id = @session_id;"
+                },
+
+                new QueryDef
+                {
+                    Code = "S3", Roles = Staff, ShowFilter = false, IsAction = true, AutoRun = false,
+                    Section = ShiftSection,
+                    Title = "Поповнити рахунок",
+                    Params =
+                    {
+                        Look("client_id", "Клієнт", Lookups.Clients, false, null, 230),
+                        Dec("amount", "Сума (грн)", 100, 1, 10000),
+                        Look("method", "Спосіб оплати", Lookups.PayMethods, false, () => "Готівка", 110),
+                        CurrentEmployee()
+                    },
+                    Procedure = "sp_TopUp",
+                    Output = "deposit_id",
+                    ConfirmText = "Зарахувати поповнення?",
+                    SuccessText = "Рахунок поповнено. Квитанція D-{2:000000}.",
+                    ResultSql = @"
+SELECT dbo.fn_FullName(last_name, first_name) AS [Клієнт],
+       phone   AS [Телефон],
+       balance AS [Баланс (грн)]
+FROM Client
+WHERE client_id = @client_id;"
                 },
 
                 new QueryDef
@@ -250,24 +345,13 @@ ORDER BY started_at;"
                     Params = { Look("client_id", "Клієнт", Lookups.Clients, false, null, 230) },
                     AutoRun = false,
                     Sql = @"
-SELECT d.paid_at     AS [Дата],
-       N'Поповнення' AS [Операція],
-       d.method      AS [Деталі],
-       d.amount      AS [Сума (грн)]
-FROM Deposit d
-WHERE d.client_id = @client_id
-UNION ALL
-SELECT s.ended_at,
-       N'Оплата сесії',
-       h.name + N' #' + CAST(c.number AS NVARCHAR(10)) + ISNULL(N', ' + g.title, N''),
-       -s.total_price
-FROM Session s
-JOIN Computer c  ON c.computer_id = s.computer_id
-JOIN Hall h      ON h.hall_id = c.hall_id
-LEFT JOIN Game g ON g.game_id = s.game_id
-WHERE s.client_id = @client_id
-  AND s.ended_at IS NOT NULL
-ORDER BY [Дата] DESC;"
+SELECT op_date       AS [Дата],
+       operation     AS [Операція],
+       details       AS [Деталі],
+       amount        AS [Сума (грн)],
+       balance_after AS [Залишок (грн)]
+FROM dbo.fn_ClientStatement(@client_id)
+ORDER BY op_date DESC;"
                 },
 
                 new QueryDef
@@ -283,19 +367,9 @@ ORDER BY [Дата] DESC;"
                         OptDate("birth", "Дата народження")
                     },
                     ConfirmText = "Зареєструвати нового клієнта?",
-                    SuccessText = "Клієнта зареєстровано. Логін і пароль для входу: його номер телефону.",
-                    Sql = @"
-IF EXISTS (SELECT 1 FROM UserAccount WHERE login = @phone)
-       OR EXISTS (SELECT 1 FROM Client WHERE phone = @phone)
-    THROW 50010, N'Клієнт з таким номером телефону вже зареєстрований.', 1;
-
-INSERT INTO UserAccount (role_id, login, password_hash)
-SELECT r.role_id, @phone, CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CAST(@phone AS VARCHAR(30))), 2)
-FROM Role r
-WHERE r.name IN (N'Клієнт', N'Client');
-
-INSERT INTO Client (user_id, last_name, first_name, phone, birth_date, balance)
-VALUES (SCOPE_IDENTITY(), @last, @first, @phone, @birth, 0);",
+                    SuccessText = "Клієнта зареєстровано (код {2}). Логін і пароль для входу: його номер телефону.",
+                    Procedure = "sp_RegisterClient",
+                    Output = "client_id",
                     ResultSql = @"
 SELECT c.client_id     AS [Код],
        c.last_name     AS [Прізвище],
@@ -305,7 +379,7 @@ SELECT c.client_id     AS [Код],
        c.registered_at AS [Зареєстрований]
 FROM Client c
 JOIN UserAccount ua ON ua.user_id = c.user_id
-WHERE c.phone = @phone;"
+WHERE c.client_id = @client_id;"
                 },
 
                 new QueryDef
@@ -337,15 +411,16 @@ ORDER BY [Годин] DESC, [Зал], [Номер];"
                     Section = AdminSection,
                     Title = "Найкращі клієнти",
                     Sql = @"
-SELECT c.last_name + N' ' + c.first_name AS [Клієнт],
+SELECT dbo.fn_FullName(c.last_name, c.first_name) AS [Клієнт],
        c.phone            AS [Телефон],
+       dbo.fn_Age(c.birth_date, CAST(GETDATE() AS DATE)) AS [Вік],
        COUNT(*)           AS [Сесій],
        SUM(s.total_price) AS [Витрачено (грн)],
        c.balance          AS [Баланс (грн)]
 FROM Client c
 JOIN Session s ON s.client_id = c.client_id
 WHERE s.total_price IS NOT NULL
-GROUP BY c.client_id, c.last_name, c.first_name, c.phone, c.balance
+GROUP BY c.client_id, c.last_name, c.first_name, c.phone, c.birth_date, c.balance
 HAVING SUM(s.total_price) > (SELECT AVG(t.spent)
                              FROM (SELECT SUM(total_price) AS spent
                                    FROM Session
@@ -397,14 +472,33 @@ FROM Hall
 WHERE @hall_id = 0 OR hall_id = @hall_id
 ORDER BY name;",
                     ConfirmText = "Змінити ціну в залах: {0}?",
-                    Sql = @"
-UPDATE Hall
-SET price_per_hour = ROUND(price_per_hour * (100 + @percent) / 100, 0)
-WHERE @hall_id = 0 OR hall_id = @hall_id;",
+                    SuccessText = "Ціни змінено в залах: {1}.",
+                    Procedure = "sp_ChangeHallPrices",
                     ResultSql = @"
 SELECT name AS [Зал], price_per_hour AS [Ціна за годину (грн)]
 FROM Hall
 ORDER BY name;"
+                },
+
+                new QueryDef
+                {
+                    Code = "A9", Roles = AdminOnly,
+                    Section = AdminSection,
+                    Title = "Журнал змін",
+                    Params = { DateP("from", "З", -7), DateP("to", "По", 0) },
+                    Sql = @"
+SELECT changed_at     AS [Час],
+       changed_by     AS [Користувач],
+       table_caption  AS [Таблиця],
+       action_caption AS [Дія],
+       record_id      AS [Код запису],
+       record_name    AS [Запис],
+       old_values     AS [Було],
+       new_values     AS [Стало]
+FROM v_ChangeLog
+WHERE changed_at >= @from
+  AND changed_at < DATEADD(DAY, 1, @to)
+ORDER BY log_id DESC;"
                 }
             };
         }

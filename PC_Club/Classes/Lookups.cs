@@ -99,6 +99,35 @@ namespace PC_Club
             return t;
         }
 
+        public static DataTable FreeComputers()
+        {
+            return Db.GetTable(@"
+SELECT computer_id AS id,
+       hall + N' #' + CAST(number AS NVARCHAR(10)) + N' (' + ISNULL(gpu, N'—') + N', '
+            + CAST(CAST(price_per_hour AS INT) AS NVARCHAR(10)) + N' грн/год)' AS text
+FROM v_FreeComputers
+ORDER BY hall, number;");
+        }
+
+        public static DataTable ActiveSessions()
+        {
+            return Db.GetTable(@"
+SELECT session_id AS id,
+       computer + N' — ' + client AS text
+FROM v_ActiveSessions
+ORDER BY computer;");
+        }
+
+        public static DataTable PayMethods()
+        {
+            var t = new DataTable();
+            t.Columns.Add("id", typeof(string));
+            t.Columns.Add("text", typeof(string));
+            t.Rows.Add("Готівка", "Готівка");
+            t.Rows.Add("Картка", "Картка");
+            return t;
+        }
+
         public static DataTable ComputerStatuses()
         {
             var t = new DataTable();

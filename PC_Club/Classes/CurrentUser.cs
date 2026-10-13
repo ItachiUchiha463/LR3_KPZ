@@ -22,6 +22,7 @@ namespace PC_Club
             EmployeeId = r["employee_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["employee_id"]);
             ClientId = r["client_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["client_id"]);
             Login = login;
+            Db.SetUser(login);
 
             if (r["employee_name"] != DBNull.Value) DisplayName = Convert.ToString(r["employee_name"]);
             else if (r["client_name"] != DBNull.Value) DisplayName = Convert.ToString(r["client_name"]);

@@ -1,151 +1,22 @@
 ﻿/* Скрипт 5. Дані для звітів (ПР5)
    Звіти будуються в програмі (RDLC), ці запити дають їм рядки.
    Кожен звіт має кілька наборів даних; назва набору вказана над запитом.
-   Назви колонок англійською: за ними звіт знаходить поля свого набору. */
+   Назви колонок англійською: за ними звіт знаходить поля свого набору.
+   Завантаженість рахує таблична функція dbo.fn_ClubLoad зі скрипту 07_procedures.sql. */
 
 USE PCClub;
 GO
 
 -- Звіт «Завантаженість клубу», набір даних Load
 DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-WITH days AS (
-    SELECT TOP (DATEDIFF(DAY, @from, @to) + 1)
-           DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, CAST(@from AS DATE)) AS d
-    FROM sys.all_objects
-),
-hours AS (
-    SELECT TOP 24 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS h
-    FROM sys.all_objects
-),
-halls AS (
-    SELECT hl.name AS hall, COUNT(c.computer_id) AS pcs
-    FROM Hall hl
-    LEFT JOIN Computer c ON c.hall_id = hl.hall_id
-    GROUP BY hl.name
-),
-capacity AS (
-    SELECT hs.hall,
-           DATEDIFF(DAY, 0, dd.d) % 7 AS dow,
-           hr.h AS hr,
-           COUNT(*) * MAX(hs.pcs) AS pcs_hours
-    FROM halls hs
-    CROSS JOIN days dd
-    CROSS JOIN hours hr
-    WHERE DATEADD(HOUR, hr.h, CAST(dd.d AS DATETIME)) < GETDATE()
-    GROUP BY hs.hall, DATEDIFF(DAY, 0, dd.d) % 7, hr.h
-),
-steps AS (
-    SELECT TOP 12 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS k
-    FROM sys.all_objects
-),
-parts AS (
-    SELECT h.name AS hall,
-           x.slot,
-           s.started_at,
-           ISNULL(s.ended_at, GETDATE()) AS finished
-    FROM Session s
-    JOIN Computer c ON c.computer_id = s.computer_id
-    JOIN Hall h     ON h.hall_id = c.hall_id
-    CROSS JOIN steps st
-    CROSS APPLY (SELECT DATEADD(HOUR, st.k, DATEADD(HOUR, DATEDIFF(HOUR, 0, s.started_at), 0)) AS slot) x
-    WHERE s.started_at < DATEADD(DAY, 1, @to)
-      AND ISNULL(s.ended_at, GETDATE()) > @from
-      AND x.slot < ISNULL(s.ended_at, GETDATE())
-      AND x.slot >= @from
-      AND x.slot < DATEADD(DAY, 1, @to)
-      AND x.slot < GETDATE()
-),
-busy AS (
-    SELECT hall,
-           DATEDIFF(DAY, 0, slot) % 7 AS dow,
-           DATEPART(HOUR, slot)       AS hr,
-           SUM(DATEDIFF(MINUTE,
-                        CASE WHEN started_at > slot THEN started_at ELSE slot END,
-                        CASE WHEN finished < DATEADD(HOUR, 1, slot) THEN finished ELSE DATEADD(HOUR, 1, slot) END)) / 60.0 AS hours
-    FROM parts
-    GROUP BY hall, DATEDIFF(DAY, 0, slot) % 7, DATEPART(HOUR, slot)
-),
-agg AS (
-    SELECT cp.hall AS Hall,
-           cp.dow  AS DayOfWeek,
-           CHOOSE(cp.dow + 1, N'Пн', N'Вт', N'Ср', N'Чт', N'Пт', N'Сб', N'Нд') AS DayName,
-           CAST(cp.hr AS INT) AS Hour,
-           CAST(ISNULL(b.hours, 0) AS DECIMAL(12,2)) AS BusyHours,
-           CAST(cp.pcs_hours AS DECIMAL(12,2))       AS CapacityHours
-    FROM capacity cp
-    LEFT JOIN busy b ON b.hall = cp.hall AND b.dow = cp.dow AND b.hr = cp.hr
-)
-SELECT Hall, DayOfWeek, DayName, Hour, BusyHours, CapacityHours FROM agg;
+SELECT Hall, DayOfWeek, DayName, Hour, BusyHours, CapacityHours FROM dbo.fn_ClubLoad(@from, @to);
 GO
 
 -- Звіт «Завантаженість клубу», набір даних LoadKpi
 DECLARE @from DATE = DATEADD(DAY, -30, CAST(GETDATE() AS DATE)), @to DATE = CAST(GETDATE() AS DATE);
-WITH days AS (
-    SELECT TOP (DATEDIFF(DAY, @from, @to) + 1)
-           DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, CAST(@from AS DATE)) AS d
-    FROM sys.all_objects
-),
-hours AS (
-    SELECT TOP 24 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS h
-    FROM sys.all_objects
-),
-halls AS (
-    SELECT hl.name AS hall, COUNT(c.computer_id) AS pcs
-    FROM Hall hl
-    LEFT JOIN Computer c ON c.hall_id = hl.hall_id
-    GROUP BY hl.name
-),
-capacity AS (
-    SELECT hs.hall,
-           DATEDIFF(DAY, 0, dd.d) % 7 AS dow,
-           hr.h AS hr,
-           COUNT(*) * MAX(hs.pcs) AS pcs_hours
-    FROM halls hs
-    CROSS JOIN days dd
-    CROSS JOIN hours hr
-    WHERE DATEADD(HOUR, hr.h, CAST(dd.d AS DATETIME)) < GETDATE()
-    GROUP BY hs.hall, DATEDIFF(DAY, 0, dd.d) % 7, hr.h
-),
-steps AS (
-    SELECT TOP 12 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS k
-    FROM sys.all_objects
-),
-parts AS (
-    SELECT h.name AS hall,
-           x.slot,
-           s.started_at,
-           ISNULL(s.ended_at, GETDATE()) AS finished
-    FROM Session s
-    JOIN Computer c ON c.computer_id = s.computer_id
-    JOIN Hall h     ON h.hall_id = c.hall_id
-    CROSS JOIN steps st
-    CROSS APPLY (SELECT DATEADD(HOUR, st.k, DATEADD(HOUR, DATEDIFF(HOUR, 0, s.started_at), 0)) AS slot) x
-    WHERE s.started_at < DATEADD(DAY, 1, @to)
-      AND ISNULL(s.ended_at, GETDATE()) > @from
-      AND x.slot < ISNULL(s.ended_at, GETDATE())
-      AND x.slot >= @from
-      AND x.slot < DATEADD(DAY, 1, @to)
-      AND x.slot < GETDATE()
-),
-busy AS (
-    SELECT hall,
-           DATEDIFF(DAY, 0, slot) % 7 AS dow,
-           DATEPART(HOUR, slot)       AS hr,
-           SUM(DATEDIFF(MINUTE,
-                        CASE WHEN started_at > slot THEN started_at ELSE slot END,
-                        CASE WHEN finished < DATEADD(HOUR, 1, slot) THEN finished ELSE DATEADD(HOUR, 1, slot) END)) / 60.0 AS hours
-    FROM parts
-    GROUP BY hall, DATEDIFF(DAY, 0, slot) % 7, DATEPART(HOUR, slot)
-),
-agg AS (
-    SELECT cp.hall AS Hall,
-           cp.dow  AS DayOfWeek,
-           CHOOSE(cp.dow + 1, N'Пн', N'Вт', N'Ср', N'Чт', N'Пт', N'Сб', N'Нд') AS DayName,
-           CAST(cp.hr AS INT) AS Hour,
-           CAST(ISNULL(b.hours, 0) AS DECIMAL(12,2)) AS BusyHours,
-           CAST(cp.pcs_hours AS DECIMAL(12,2))       AS CapacityHours
-    FROM capacity cp
-    LEFT JOIN busy b ON b.hall = cp.hall AND b.dow = cp.dow AND b.hr = cp.hr
+WITH agg AS (
+    SELECT Hall, DayOfWeek, DayName, Hour, BusyHours, CapacityHours
+    FROM dbo.fn_ClubLoad(@from, @to)
 )
 SELECT (SELECT SUM(BusyHours) / NULLIF(SUM(CapacityHours), 0) FROM agg) AS AvgLoad,
        p.DayName AS PeakDay,

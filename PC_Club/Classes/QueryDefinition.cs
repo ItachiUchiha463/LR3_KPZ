@@ -13,7 +13,8 @@ namespace PC_Club
         OptionalDate,
         Phone,
         Lookup,
-        CurrentClient
+        CurrentClient,
+        CurrentEmployee
     }
 
     public class QueryParam
@@ -36,6 +37,9 @@ namespace PC_Club
         public string Title;
         public string Section;
         public string Sql;
+        public string Procedure;
+        public string Output;
+        public SqlDbType OutputType = SqlDbType.Int;
         public UserRole[] Roles;
         public List<QueryParam> Params = new List<QueryParam>();
 

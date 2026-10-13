@@ -13,6 +13,7 @@ namespace PC_Club.Forms
         private readonly QueryDef _q;
         private readonly Dictionary<string, Control> _inputs = new Dictionary<string, Control>();
         private readonly List<Action> _lookupDefaults = new List<Action>();
+        private readonly List<Action> _lookupReloads = new List<Action>();
 
         private readonly DataGridView _grid = new DataGridView();
         private readonly ToolStripStatusLabel _count = new ToolStripStatusLabel();
@@ -68,7 +69,7 @@ namespace PC_Club.Forms
 
             foreach (QueryParam p in _q.Params)
             {
-                if (p.Kind == ParamKind.CurrentClient) continue;
+                if (p.Kind == ParamKind.CurrentClient || p.Kind == ParamKind.CurrentEmployee) continue;
 
                 Control input = CreateInput(p);
                 _inputs[p.Name] = input;
@@ -200,6 +201,7 @@ namespace PC_Club.Forms
                             ValueMember = "id"
                         };
                         combo.DataSource = LoadLookup(p);
+                        _lookupReloads.Add(() => combo.DataSource = LoadLookup(p));
 
                         _lookupDefaults.Add(() =>
                         {
@@ -269,6 +271,14 @@ namespace PC_Club.Forms
                     continue;
                 }
 
+                if (p.Kind == ParamKind.CurrentEmployee)
+                {
+                    if (CurrentUser.EmployeeId == null)
+                        return Fail(null, "Цю операцію виконує працівник клубу, а обліковий запис не прив'язаний до працівника.");
+                    values[p.Name] = CurrentUser.EmployeeId.Value;
+                    continue;
+                }
+
                 Control c = _inputs[p.Name];
                 switch (p.Kind)
                 {
@@ -326,7 +336,7 @@ namespace PC_Club.Forms
                                 if (p.Required) return Fail(c, "Виберіть значення зі списку в полі «" + p.Caption + "».");
                                 values[p.Name] = DBNull.Value;
                             }
-                            else values[p.Name] = Convert.ToInt32(v);
+                            else values[p.Name] = v is string ? v : (object)Convert.ToInt32(v);
                             break;
                         }
 
@@ -361,7 +371,9 @@ namespace PC_Club.Forms
                 else
                 {
                     Cursor = Cursors.WaitCursor;
-                    ShowTable(Db.GetTable(_q.Sql, MakeParams(values)));
+                    ShowTable(_q.Procedure != null
+                        ? Db.GetTableFromProcedure(_q.Procedure, MakeParams(values))
+                        : Db.GetTable(_q.Sql, MakeParams(values)));
                 }
             }
             catch (Exception ex)
@@ -398,11 +410,31 @@ namespace PC_Club.Forms
                 return;
 
             Cursor = Cursors.WaitCursor;
-            int affected = Db.Execute(_q.Sql, MakeParams(values));
+            int affected = 0;
+            object output = null;
+            if (_q.Procedure != null)
+            {
+                SqlParameter outParam = null;
+                if (_q.Output != null)
+                {
+                    outParam = new SqlParameter("@" + _q.Output, _q.OutputType);
+                    if (_q.OutputType == SqlDbType.Decimal)
+                    {
+                        outParam.Precision = 8;
+                        outParam.Scale = 2;
+                    }
+                }
+                output = Db.ExecuteProcedure(_q.Procedure, outParam, MakeParams(values));
+                if (_q.Output != null) values[_q.Output] = output;
+            }
+            else affected = Db.Execute(_q.Sql, MakeParams(values));
             Cursor = Cursors.Default;
 
-            MessageBox.Show(string.Format(_q.SuccessText ?? "Виконано. Змінено записів: {0}.", affected, previewCount),
+            MessageBox.Show(string.Format(_q.SuccessText ?? "Виконано. Змінено записів: {0}.", affected, previewCount, output),
                             Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            foreach (Action reload in _lookupReloads) reload();
+            foreach (Action apply in _lookupDefaults) apply();
 
             if (_q.ResultSql != null)
                 ShowTable(Db.GetTable(_q.ResultSql, MakeParams(values)));

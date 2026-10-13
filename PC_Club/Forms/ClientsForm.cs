@@ -22,7 +22,7 @@ namespace PC_Club.Forms
 
             Bind(ds.Client, () => adapter.Update(ds.Client),
      "last_name", "first_name", "phone", "balance", "birth_date", "registered_at");
-            HideInEditor("user_id");
+            HideInEditor("user_id", "balance");
             dgv.Columns["user_id"].Visible = false;
         }
     }

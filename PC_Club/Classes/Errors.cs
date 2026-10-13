@@ -23,6 +23,9 @@ namespace PC_Club
 
         private static string FromSql(SqlException e)
         {
+            foreach (SqlError error in e.Errors)
+                if (error.Number >= 50000) return error.Message;
+
             string text = e.Message;
             switch (e.Number)
             {
@@ -70,9 +73,6 @@ namespace PC_Club
                 case 4060:
                 case 18456:
                     return "Не вдалося увійти в базу даних: перевірте логін і пароль у рядку підключення.";
-                case 50010:
-                    return text;
-
                 default:
                     return "Помилка бази даних: " + text;
             }
