@@ -34,6 +34,7 @@ namespace PC_Club
     {
         public string Code;
         public string Title;
+        public string Section;
         public string Sql;
         public UserRole[] Roles;
         public List<QueryParam> Params = new List<QueryParam>();

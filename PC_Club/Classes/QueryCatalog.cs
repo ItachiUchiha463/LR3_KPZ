@@ -12,16 +12,15 @@ namespace PC_Club
         private static readonly UserRole[] Staff = { UserRole.Manager, UserRole.Admin };
         private static readonly UserRole[] AdminOnly = { UserRole.Admin };
 
+        public const string ShiftSection = "Робота зміни";
+        public const string ClubSection = "Клуб";
+        public const string AdminSection = "Адміністрування";
+
         public static readonly List<QueryDef> All = Build();
 
         public static QueryDef Get(string code)
         {
             return All.FirstOrDefault(q => q.Code == code);
-        }
-
-        public static IEnumerable<QueryDef> ForRole(UserRole role)
-        {
-            return All.Where(q => q.Roles.Contains(role));
         }
 
         private static QueryParam Txt(string name, string caption, bool required = false, int width = 180)
@@ -114,6 +113,7 @@ namespace PC_Club
                 new QueryDef
                 {
                     Code = "U1", Roles = Everyone,
+                    Section = ClubSection,
                     Title = "Вільні комп'ютери",
                     Sql = @"
 SELECT hall           AS [Зал],
@@ -128,6 +128,7 @@ ORDER BY hall, number;"
                 new QueryDef
                 {
                     Code = "U2", Roles = Everyone,
+                    Section = ClubSection,
                     Title = "Де пограти в гру",
                     Sql = @"
 SELECT g.title  AS [Гра],
@@ -152,6 +153,7 @@ ORDER BY g.title, h.name, c.number;"
                 new QueryDef
                 {
                     Code = "U3", Roles = Everyone,
+                    Section = ClubSection,
                     Title = "Каталог ігор",
                     Sql = @"
 SELECT g.title     AS [Гра],
@@ -166,6 +168,7 @@ ORDER BY ge.name, g.title;"
                 new QueryDef
                 {
                     Code = "U4", Roles = Everyone, ShowFilter = false,
+                    Section = ClubSection,
                     Title = "Калькулятор вартості",
                     Sql = @"
 SELECT h.name             AS [Зал],
@@ -183,6 +186,7 @@ ORDER BY h.name, [До сплати (грн)];"
                 new QueryDef
                 {
                     Code = "U5", Roles = Everyone, ShowFilter = false,
+                    Section = ClubSection,
                     Title = "Топ-5 популярних ігор",
                     Params = { Int("days", "За останні днів", 30, 1, 365) },
                     Sql = @"
@@ -202,6 +206,7 @@ ORDER BY [Сесій] DESC, [Годин зіграно] DESC;"
                 new QueryDef
                 {
                     Code = "U6", Roles = ClientOnly,
+                    Section = ClubSection,
                     Title = "Мої сесії",
                     Params = { CurrentClient() },
                     Sql = @"
@@ -220,6 +225,7 @@ ORDER BY started_at DESC;"
                 new QueryDef
                 {
                     Code = "M1", Roles = Staff, ShowFilter = false,
+                    Section = ShiftSection,
                     Title = "Хто зараз грає",
                     Sql = @"
 SELECT client        AS [Клієнт],
@@ -239,6 +245,7 @@ ORDER BY started_at;"
                 new QueryDef
                 {
                     Code = "M4", Roles = Staff, ShowFilter = false,
+                    Section = ShiftSection,
                     Title = "Рух коштів клієнта",
                     Params = { Look("client_id", "Клієнт", Lookups.Clients, false, null, 230) },
                     AutoRun = false,
@@ -266,6 +273,7 @@ ORDER BY [Дата] DESC;"
                 new QueryDef
                 {
                     Code = "M7", Roles = Staff, ShowFilter = false, IsAction = true, AutoRun = false,
+                    Section = ShiftSection,
                     Title = "Реєстрація клієнта",
                     Params =
                     {
@@ -303,6 +311,7 @@ WHERE c.phone = @phone;"
                 new QueryDef
                 {
                     Code = "A3", Roles = AdminOnly,
+                    Section = AdminSection,
                     Title = "Завантаженість комп'ютерів",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
@@ -325,6 +334,7 @@ ORDER BY [Годин] DESC, [Зал], [Номер];"
                 new QueryDef
                 {
                     Code = "A4", Roles = AdminOnly,
+                    Section = AdminSection,
                     Title = "Найкращі клієнти",
                     Sql = @"
 SELECT c.last_name + N' ' + c.first_name AS [Клієнт],
@@ -347,6 +357,7 @@ ORDER BY [Витрачено (грн)] DESC;"
                 new QueryDef
                 {
                     Code = "A5", Roles = AdminOnly, ShowFilter = false,
+                    Section = AdminSection,
                     Title = "Робота працівників",
                     Params = { DateP("from", "З", -30), DateP("to", "По", 0) },
                     Sql = @"
@@ -371,6 +382,7 @@ ORDER BY [Прийнято коштів (грн)] DESC;"
                 new QueryDef
                 {
                     Code = "A8", Roles = AdminOnly, ShowFilter = false, IsAction = true, AutoRun = false,
+                    Section = AdminSection,
                     Title = "Змінити ціни залів",
                     Params =
                     {

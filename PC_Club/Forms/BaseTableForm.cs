@@ -223,7 +223,7 @@ namespace PC_Club.Forms
             int maxWidth = Screen.FromControl(this).WorkingArea.Width;
             int newWidth = Math.Min(Width + extra, maxWidth);
 
-            if (newWidth > Width)
+            if (TopLevel && newWidth > Width)
             {
                 Width = newWidth;
                 CenterToScreen();

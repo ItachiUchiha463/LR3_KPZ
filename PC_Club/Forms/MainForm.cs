@@ -1,11 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace PC_Club.Forms
 {
     public partial class MainForm : Form
     {
+        private List<NavItem> _items = new List<NavItem>();
+        private readonly Dictionary<string, TabPage> _open = new Dictionary<string, TabPage>();
+
         public MainForm()
         {
             InitializeComponent();
@@ -14,26 +19,175 @@ namespace PC_Club.Forms
         private void MainForm_Load(object sender, EventArgs e)
         {
             lblUser.Text = "Користувач: " + CurrentUser.DisplayName + " (" + CurrentUser.RoleName + ")";
-            if (CurrentUser.Role == UserRole.User) gbState.Text = "Мій рахунок";
-            Nav.Prepare(panelBody);
+            if (CurrentUser.Role == UserRole.User)
+            {
+                gbState.Text = "Мій рахунок";
+                tabState.Text = "Мій рахунок";
+            }
+
+            _items = Nav.ItemsForCurrentUser();
+            BuildTree();
         }
 
-        protected override void OnShown(EventArgs e)
+        private void BuildTree()
         {
-            base.OnShown(e);
+            string filter = txtSearch.Text.Trim();
 
-            int height = panelBody.Padding.Vertical;
-            foreach (Control c in panelBody.Controls)
-                if (c.Visible) height += c.Height;
+            tree.BeginUpdate();
+            tree.Nodes.Clear();
+            foreach (string section in Nav.SectionOrder)
+            {
+                var matches = _items.Where(i => i.Section == section &&
+                    (filter == "" || i.Title.IndexOf(filter, StringComparison.CurrentCultureIgnoreCase) >= 0)).ToList();
+                if (matches.Count == 0) continue;
 
-            ClientSize = new System.Drawing.Size(ClientSize.Width,
-                                                 height + menuMain.Height + statusMain.Height);
-            CenterToScreen();
+                TreeNode sectionNode = tree.Nodes.Add(section);
+                sectionNode.NodeFont = new System.Drawing.Font(tree.Font, System.Drawing.FontStyle.Bold);
+                sectionNode.Text = section;
+                foreach (NavItem item in matches)
+                    sectionNode.Nodes.Add(new TreeNode(item.Title) { Tag = item });
+            }
+            tree.ExpandAll();
+            if (tree.Nodes.Count > 0) tree.Nodes[0].EnsureVisible();
+            tree.EndUpdate();
+        }
+
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            BuildTree();
+        }
+
+        private void txtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                TreeNode first = tree.Nodes.Cast<TreeNode>().SelectMany(n => n.Nodes.Cast<TreeNode>()).FirstOrDefault();
+                if (first != null) Open((NavItem)first.Tag);
+                e.SuppressKeyPress = true;
+            }
+            else if (e.KeyCode == Keys.Down && tree.Nodes.Count > 0)
+            {
+                tree.Focus();
+                tree.SelectedNode = tree.Nodes[0].Nodes.Count > 0 ? tree.Nodes[0].Nodes[0] : tree.Nodes[0];
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void tree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && e.Node.Tag is NavItem)
+                Open((NavItem)e.Node.Tag);
+        }
+
+        private void tree_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter && tree.SelectedNode != null && tree.SelectedNode.Tag is NavItem)
+            {
+                Open((NavItem)tree.SelectedNode.Tag);
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void Open(NavItem item)
+        {
+            TabPage page;
+            if (_open.TryGetValue(item.Id, out page))
+            {
+                tabs.SelectedTab = page;
+                return;
+            }
+
+            Form form = Nav.CreateForm(item);
+            if (form == null) return;
+
+            form.TopLevel = false;
+            form.FormBorderStyle = FormBorderStyle.None;
+            form.Dock = DockStyle.Fill;
+
+            page = new TabPage(item.Title) { Tag = form };
+            page.Controls.Add(form);
+            _open[item.Id] = page;
+            form.TextChanged += (s, e) => page.Text = form.Text;
+            form.FormClosed += (s, e) =>
+            {
+                _open.Remove(item.Id);
+                tabs.TabPages.Remove(page);
+                page.Dispose();
+            };
+
+            tabs.TabPages.Add(page);
+            tabs.SelectedTab = page;
+            form.Show();
+        }
+
+        private bool CloseTab(TabPage page)
+        {
+            if (page == null || page == tabState) return true;
+            var form = page.Tag as Form;
+            if (form == null) return true;
+            form.Close();
+            return form.IsDisposed || !tabs.TabPages.Contains(page);
+        }
+
+        private TabPage TabAt(System.Drawing.Point location)
+        {
+            for (int i = 0; i < tabs.TabCount; i++)
+                if (tabs.GetTabRect(i).Contains(location)) return tabs.TabPages[i];
+            return null;
+        }
+
+        private TabPage _menuPage;
+
+        private void tabs_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Middle) CloseTab(TabAt(e.Location));
+        }
+
+        private void menuTab_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            _menuPage = TabAt(tabs.PointToClient(Cursor.Position));
+            if (_menuPage == null) { e.Cancel = true; return; }
+            menuTabClose.Enabled = _menuPage != tabState;
+        }
+
+        private void menuTabClose_Click(object sender, EventArgs e)
+        {
+            CloseTab(_menuPage);
+        }
+
+        private void menuTabCloseOthers_Click(object sender, EventArgs e)
+        {
+            foreach (TabPage page in tabs.TabPages.Cast<TabPage>().ToList())
+                if (page != _menuPage && !CloseTab(page)) break;
+        }
+
+        private void menuCloseTab_Click(object sender, EventArgs e)
+        {
+            CloseTab(tabs.SelectedTab);
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            foreach (TabPage page in tabs.TabPages.Cast<TabPage>().ToList())
+            {
+                if (!CloseTab(page))
+                {
+                    tabs.SelectedTab = page;
+                    e.Cancel = true;
+                    Nav.LogoutRequested = false;
+                    return;
+                }
+            }
+        }
+
+        private void tabs_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tabs.SelectedTab == tabState) RefreshStats();
         }
 
         private void MainForm_Activated(object sender, EventArgs e)
         {
-            RefreshStats();
+            if (tabs.SelectedTab == tabState) RefreshStats();
         }
 
         private void RefreshStats()
@@ -108,11 +262,6 @@ WHERE c.client_id = @client_id;", Db.P("@client_id", CurrentUser.ClientId.Value)
             lblStat2.Text = "Сесій: " + r["sessions"];
             lblStat3.Text = "Витрачено: " + Money(r["spent"]);
             lblStat4.Text = "Поповнено: " + Money(r["deposited"]);
-        }
-
-        private void OpenByTag_Click(object sender, EventArgs e)
-        {
-            Nav.Open(this, sender);
         }
 
         private void menuLogout_Click(object sender, EventArgs e)

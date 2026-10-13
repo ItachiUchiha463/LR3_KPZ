@@ -1,12 +1,50 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using PC_Club.Forms;
 
 namespace PC_Club
 {
+    public enum NavKind { Query, Report, Table }
+
+    public class NavItem
+    {
+        public NavKind Kind;
+        public string Key;
+        public string Title;
+        public string Section;
+
+        public string Id
+        {
+            get { return Kind + ":" + Key; }
+        }
+    }
+
     public static class Nav
     {
+        public const string ReportSection = "Звіти";
+        public const string DataSection = "Дані";
+
+        public static readonly string[] SectionOrder =
+        {
+            QueryCatalog.ShiftSection, QueryCatalog.ClubSection, ReportSection, QueryCatalog.AdminSection, DataSection
+        };
+
+        private static readonly string[,] Tables =
+        {
+            { "ClientsForm", "Клієнти" },
+            { "SessionsForm", "Сесії" },
+            { "DepositsForm", "Поповнення" },
+            { "EmployeeForm", "Працівники" },
+            { "HallsForm", "Зали" },
+            { "ComputersForm", "Комп'ютери" },
+            { "GenresForm", "Жанри" },
+            { "GamesForm", "Ігри" },
+            { "TariffsForm", "Тарифи" },
+            { "ComputerGamesForm", "Ігри на ПК" }
+        };
+
         public static bool LogoutRequested;
 
         public static Form CreateMainForm()
@@ -20,75 +58,47 @@ namespace PC_Club
             window.Close();
         }
 
-        public static void Open(Form owner, object sender)
+        public static List<NavItem> ItemsForCurrentUser()
         {
-            var c = sender as Control;
-            string tag = c != null ? c.Tag as string : null;
-            if (tag == null || tag.Length < 3) return;
+            var items = new List<NavItem>();
 
-            string key = tag.Substring(2);
-            if (tag.StartsWith("Q:")) OpenQuery(owner, key);
-            else if (tag.StartsWith("F:")) OpenTable(owner, key);
-            else if (tag.StartsWith("R:")) OpenReport(owner, key);
+            foreach (QueryDef q in QueryCatalog.All.Where(q => q.Roles.Contains(CurrentUser.Role)))
+                items.Add(new NavItem { Kind = NavKind.Query, Key = q.Code, Title = q.Title, Section = q.Section });
+
+            foreach (ReportDef r in ReportCatalog.All.Where(r => r.Roles.Contains(CurrentUser.Role)))
+                items.Add(new NavItem { Kind = NavKind.Report, Key = r.Code, Title = r.Title, Section = ReportSection });
+
+            for (int i = 0; i < Tables.GetLength(0); i++)
+                if (CurrentUser.CanOpen(Tables[i, 0]))
+                    items.Add(new NavItem { Kind = NavKind.Table, Key = Tables[i, 0], Title = Tables[i, 1], Section = DataSection });
+
+            return items;
         }
 
-        public static void OpenReport(Form owner, string code)
+        public static Form CreateForm(NavItem item)
         {
-            ReportDef r = ReportCatalog.Get(code);
-            if (r == null)
+            switch (item.Kind)
             {
-                MessageBox.Show("Звіт " + code + " не знайдено.", "Звіт");
-                return;
+                case NavKind.Query:
+                    QueryDef q = QueryCatalog.Get(item.Key);
+                    if (q == null || !q.Roles.Contains(CurrentUser.Role)) return Denied();
+                    return new QueryForm(q);
+
+                case NavKind.Report:
+                    ReportDef r = ReportCatalog.Get(item.Key);
+                    if (r == null || !r.Roles.Contains(CurrentUser.Role)) return Denied();
+                    return new ReportForm(r);
+
+                default:
+                    if (!CurrentUser.CanOpen(item.Key)) return Denied();
+                    return CreateTableForm(item.Key);
             }
-            if (!r.Roles.Contains(CurrentUser.Role))
-            {
-                MessageBox.Show("Цей звіт недоступний для ролі «" + CurrentUser.RoleName + "».", "Звіт");
-                return;
-            }
-            new ReportForm(r).Show(owner);
         }
 
-        public static void OpenQuery(Form owner, string code)
+        private static Form Denied()
         {
-            QueryDef q = QueryCatalog.Get(code);
-            if (q == null)
-            {
-                MessageBox.Show("Запит " + code + " не знайдено в каталозі.", "Запит");
-                return;
-            }
-            if (!q.Roles.Contains(CurrentUser.Role))
-            {
-                MessageBox.Show("Цей запит недоступний для ролі «" + CurrentUser.RoleName + "».", "Запит");
-                return;
-            }
-            new QueryForm(q).Show(owner);
-        }
-
-        public static void OpenTable(Form owner, string formName)
-        {
-            if (!CurrentUser.CanOpen(formName))
-            {
-                MessageBox.Show("Ця таблиця недоступна для ролі «" + CurrentUser.RoleName + "».", "Дані");
-                return;
-            }
-
-            Form existing = Application.OpenForms.Cast<Form>()
-                                       .FirstOrDefault(f => f.GetType().Name == formName);
-            if (existing != null)
-            {
-                if (existing.WindowState == FormWindowState.Minimized)
-                    existing.WindowState = FormWindowState.Normal;
-                existing.Activate();
-                return;
-            }
-
-            Form form = CreateTableForm(formName);
-            if (form == null)
-            {
-                MessageBox.Show("Форму " + formName + " не знайдено.", "Дані");
-                return;
-            }
-            form.Show(owner);
+            MessageBox.Show("Недоступно для ролі «" + CurrentUser.RoleName + "».", "Доступ");
+            return null;
         }
 
         private static Form CreateTableForm(string name)
@@ -107,59 +117,6 @@ namespace PC_Club
                 case "ComputerGamesForm": return new ComputerGamesForm();
                 default: return null;
             }
-        }
-
-        public static void Prepare(Control root)
-        {
-            bool hasButtons;
-            Prepare(root, out hasButtons);
-        }
-
-        private static bool IsAllowed(string kind, string key)
-        {
-            switch (kind)
-            {
-                case "Q:":
-                    QueryDef q = QueryCatalog.Get(key);
-                    return q != null && q.Roles.Contains(CurrentUser.Role);
-                case "R:":
-                    ReportDef r = ReportCatalog.Get(key);
-                    return r != null && r.Roles.Contains(CurrentUser.Role);
-                default:
-                    return CurrentUser.CanOpen(key);
-            }
-        }
-
-        private static bool Prepare(Control parent, out bool hasButtons)
-        {
-            bool anyVisible = false;
-            hasButtons = false;
-
-            foreach (Control c in parent.Controls)
-            {
-                string tag = c.Tag as string;
-                if (c is Button && tag != null && tag.Length > 2)
-                {
-                    string key = tag.Substring(2);
-                    bool show = IsAllowed(tag.Substring(0, 2), key);
-
-                    c.Visible = show;
-                    hasButtons = true;
-                    anyVisible |= show;
-                }
-                else if (c.HasChildren)
-                {
-                    bool childHasButtons;
-                    bool childVisible = Prepare(c, out childHasButtons);
-                    if (childHasButtons)
-                    {
-                        hasButtons = true;
-                        anyVisible |= childVisible;
-                        if (c is GroupBox) c.Visible = childVisible;
-                    }
-                }
-            }
-            return anyVisible;
         }
     }
 }
