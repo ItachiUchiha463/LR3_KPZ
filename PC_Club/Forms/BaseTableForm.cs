@@ -190,8 +190,7 @@ namespace PC_Club.Forms
 
         protected void SetReadOnly(bool readOnly)
         {
-            btnAdd.Visible = !readOnly;
-            btnDelete.Visible = !readOnly;
+            gbRecord.Visible = !readOnly;
             panelEdit.Visible = !readOnly;
         }
 

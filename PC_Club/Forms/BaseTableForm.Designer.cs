@@ -31,11 +31,14 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BaseTableForm));
             this.panelTop = new System.Windows.Forms.Panel();
+            this.gbFilter = new System.Windows.Forms.GroupBox();
+            this.gbSearch = new System.Windows.Forms.GroupBox();
+            this.gbSort = new System.Windows.Forms.GroupBox();
+            this.gbRecord = new System.Windows.Forms.GroupBox();
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.cbSearchField = new System.Windows.Forms.ComboBox();
             this.btnRemoveCond = new System.Windows.Forms.Button();
             this.lstConditions = new System.Windows.Forms.ListBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.cbOp = new System.Windows.Forms.ComboBox();
             this.lblFound = new System.Windows.Forms.Label();
             this.btnDelete = new System.Windows.Forms.Button();
@@ -79,6 +82,10 @@
             this.toolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.lblCount = new System.Windows.Forms.ToolStripStatusLabel();
             this.panelTop.SuspendLayout();
+            this.gbFilter.SuspendLayout();
+            this.gbSearch.SuspendLayout();
+            this.gbSort.SuspendLayout();
+            this.gbRecord.SuspendLayout();
             this.menuOps.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.bindingNavigator1)).BeginInit();
             this.bindingNavigator1.SuspendLayout();
@@ -91,74 +98,41 @@
             // 
             // panelTop
             // 
-            this.panelTop.Controls.Add(this.txtSearch);
-            this.panelTop.Controls.Add(this.cbSearchField);
-            this.panelTop.Controls.Add(this.btnRemoveCond);
-            this.panelTop.Controls.Add(this.lstConditions);
-            this.panelTop.Controls.Add(this.label1);
-            this.panelTop.Controls.Add(this.cbOp);
-            this.panelTop.Controls.Add(this.lblFound);
-            this.panelTop.Controls.Add(this.btnDelete);
-            this.panelTop.Controls.Add(this.btnAdd);
-            this.panelTop.Controls.Add(this.btnReset);
-            this.panelTop.Controls.Add(this.btnFind);
-            this.panelTop.Controls.Add(this.btnFilter);
-            this.panelTop.Controls.Add(this.btnSortDesc);
-            this.panelTop.Controls.Add(this.btnSortAsc);
-            this.panelTop.Controls.Add(this.txtValue);
-            this.panelTop.Controls.Add(this.cbField);
+            this.panelTop.Controls.Add(this.gbRecord);
+            this.panelTop.Controls.Add(this.gbSort);
+            this.panelTop.Controls.Add(this.gbSearch);
+            this.panelTop.Controls.Add(this.gbFilter);
             this.panelTop.Controls.Add(this.menuOps);
             this.panelTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelTop.Location = new System.Drawing.Point(0, 0);
             this.panelTop.Name = "panelTop";
-            this.panelTop.Size = new System.Drawing.Size(1122, 155);
+            this.panelTop.Size = new System.Drawing.Size(1122, 150);
             this.panelTop.TabIndex = 0;
             // 
-            // txtSearch
+            // gbFilter
             // 
-            this.txtSearch.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.txtSearch.Location = new System.Drawing.Point(669, 108);
-            this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(100, 22);
-            this.txtSearch.TabIndex = 18;
+            this.gbFilter.Controls.Add(this.cbField);
+            this.gbFilter.Controls.Add(this.cbOp);
+            this.gbFilter.Controls.Add(this.txtValue);
+            this.gbFilter.Controls.Add(this.btnFilter);
+            this.gbFilter.Controls.Add(this.lstConditions);
+            this.gbFilter.Controls.Add(this.btnRemoveCond);
+            this.gbFilter.Controls.Add(this.btnReset);
+            this.gbFilter.Location = new System.Drawing.Point(8, 32);
+            this.gbFilter.Name = "gbFilter";
+            this.gbFilter.Size = new System.Drawing.Size(500, 112);
+            this.gbFilter.TabIndex = 1;
+            this.gbFilter.TabStop = false;
+            this.gbFilter.Text = "Фільтр (умови діють разом)";
             // 
-            // cbSearchField
+            // cbField
             // 
-            this.cbSearchField.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.cbSearchField.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbSearchField.FormattingEnabled = true;
-            this.cbSearchField.Location = new System.Drawing.Point(542, 108);
-            this.cbSearchField.Name = "cbSearchField";
-            this.cbSearchField.Size = new System.Drawing.Size(121, 24);
-            this.cbSearchField.TabIndex = 17;
-            // 
-            // btnRemoveCond
-            // 
-            this.btnRemoveCond.Location = new System.Drawing.Point(187, 108);
-            this.btnRemoveCond.Name = "btnRemoveCond";
-            this.btnRemoveCond.Size = new System.Drawing.Size(131, 37);
-            this.btnRemoveCond.TabIndex = 16;
-            this.btnRemoveCond.Text = "Видалити умову";
-            this.btnRemoveCond.UseVisualStyleBackColor = true;
-            this.btnRemoveCond.Click += new System.EventHandler(this.btnRemoveCond_Click);
-            // 
-            // lstConditions
-            // 
-            this.lstConditions.FormattingEnabled = true;
-            this.lstConditions.ItemHeight = 16;
-            this.lstConditions.Location = new System.Drawing.Point(12, 50);
-            this.lstConditions.Name = "lstConditions";
-            this.lstConditions.Size = new System.Drawing.Size(467, 52);
-            this.lstConditions.TabIndex = 15;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(9, 30);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(110, 16);
-            this.label1.TabIndex = 14;
-            this.label1.Text = "Умови фільтра: ";
+            this.cbField.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbField.FormattingEnabled = true;
+            this.cbField.Location = new System.Drawing.Point(10, 22);
+            this.cbField.Name = "cbField";
+            this.cbField.Size = new System.Drawing.Size(120, 24);
+            this.cbField.TabIndex = 0;
             // 
             // cbOp
             // 
@@ -169,110 +143,166 @@
             ">",
             "<",
             "="});
-            this.cbOp.Location = new System.Drawing.Point(252, 27);
+            this.cbOp.Location = new System.Drawing.Point(135, 22);
             this.cbOp.Name = "cbOp";
-            this.cbOp.Size = new System.Drawing.Size(121, 24);
-            this.cbOp.TabIndex = 13;
+            this.cbOp.Size = new System.Drawing.Size(85, 24);
+            this.cbOp.TabIndex = 1;
             // 
-            // lblFound
+            // txtValue
             // 
-            this.lblFound.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.lblFound.AutoSize = true;
-            this.lblFound.Location = new System.Drawing.Point(629, 70);
-            this.lblFound.Name = "lblFound";
-            this.lblFound.Size = new System.Drawing.Size(0, 16);
-            this.lblFound.TabIndex = 12;
-            // 
-            // btnDelete
-            // 
-            this.btnDelete.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnDelete.Location = new System.Drawing.Point(950, 50);
-            this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(97, 37);
-            this.btnDelete.TabIndex = 11;
-            this.btnDelete.Text = "Видалити";
-            this.btnDelete.UseVisualStyleBackColor = true;
-            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
-            // 
-            // btnAdd
-            // 
-            this.btnAdd.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnAdd.Location = new System.Drawing.Point(950, 93);
-            this.btnAdd.Name = "btnAdd";
-            this.btnAdd.Size = new System.Drawing.Size(97, 37);
-            this.btnAdd.TabIndex = 9;
-            this.btnAdd.Text = "Додати";
-            this.btnAdd.UseVisualStyleBackColor = true;
-            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
-            // 
-            // btnReset
-            // 
-            this.btnReset.Location = new System.Drawing.Point(361, 108);
-            this.btnReset.Name = "btnReset";
-            this.btnReset.Size = new System.Drawing.Size(123, 37);
-            this.btnReset.TabIndex = 6;
-            this.btnReset.Text = "Скинути";
-            this.btnReset.UseVisualStyleBackColor = true;
-            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
-            // 
-            // btnFind
-            // 
-            this.btnFind.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnFind.Location = new System.Drawing.Point(542, 60);
-            this.btnFind.Name = "btnFind";
-            this.btnFind.Size = new System.Drawing.Size(81, 37);
-            this.btnFind.TabIndex = 5;
-            this.btnFind.Text = "Пошук";
-            this.btnFind.UseVisualStyleBackColor = true;
-            this.btnFind.Click += new System.EventHandler(this.btnFind_Click);
+            this.txtValue.Location = new System.Drawing.Point(225, 23);
+            this.txtValue.Name = "txtValue";
+            this.txtValue.Size = new System.Drawing.Size(110, 22);
+            this.txtValue.TabIndex = 2;
             // 
             // btnFilter
             // 
-            this.btnFilter.Location = new System.Drawing.Point(12, 108);
+            this.btnFilter.Location = new System.Drawing.Point(345, 20);
             this.btnFilter.Name = "btnFilter";
-            this.btnFilter.Size = new System.Drawing.Size(127, 37);
-            this.btnFilter.TabIndex = 4;
+            this.btnFilter.Size = new System.Drawing.Size(145, 28);
+            this.btnFilter.TabIndex = 3;
             this.btnFilter.Text = "Додати умову";
             this.btnFilter.UseVisualStyleBackColor = true;
             this.btnFilter.Click += new System.EventHandler(this.btnFilter_Click);
             // 
-            // btnSortDesc
+            // lstConditions
             // 
-            this.btnSortDesc.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnSortDesc.Location = new System.Drawing.Point(847, 93);
-            this.btnSortDesc.Name = "btnSortDesc";
-            this.btnSortDesc.Size = new System.Drawing.Size(97, 37);
-            this.btnSortDesc.TabIndex = 3;
-            this.btnSortDesc.Text = "Я-А";
-            this.btnSortDesc.UseVisualStyleBackColor = true;
-            this.btnSortDesc.Click += new System.EventHandler(this.btnSortDesc_Click);
+            this.lstConditions.FormattingEnabled = true;
+            this.lstConditions.IntegralHeight = false;
+            this.lstConditions.ItemHeight = 16;
+            this.lstConditions.Location = new System.Drawing.Point(10, 54);
+            this.lstConditions.Name = "lstConditions";
+            this.lstConditions.Size = new System.Drawing.Size(325, 50);
+            this.lstConditions.TabIndex = 4;
+            // 
+            // btnRemoveCond
+            // 
+            this.btnRemoveCond.Location = new System.Drawing.Point(345, 54);
+            this.btnRemoveCond.Name = "btnRemoveCond";
+            this.btnRemoveCond.Size = new System.Drawing.Size(145, 24);
+            this.btnRemoveCond.TabIndex = 5;
+            this.btnRemoveCond.Text = "Видалити умову";
+            this.btnRemoveCond.UseVisualStyleBackColor = true;
+            this.btnRemoveCond.Click += new System.EventHandler(this.btnRemoveCond_Click);
+            // 
+            // btnReset
+            // 
+            this.btnReset.Location = new System.Drawing.Point(345, 80);
+            this.btnReset.Name = "btnReset";
+            this.btnReset.Size = new System.Drawing.Size(145, 24);
+            this.btnReset.TabIndex = 6;
+            this.btnReset.Text = "Скинути все";
+            this.btnReset.UseVisualStyleBackColor = true;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
+            // 
+            // gbSearch
+            // 
+            this.gbSearch.Controls.Add(this.cbSearchField);
+            this.gbSearch.Controls.Add(this.txtSearch);
+            this.gbSearch.Controls.Add(this.btnFind);
+            this.gbSearch.Controls.Add(this.lblFound);
+            this.gbSearch.Location = new System.Drawing.Point(514, 32);
+            this.gbSearch.Name = "gbSearch";
+            this.gbSearch.Size = new System.Drawing.Size(250, 112);
+            this.gbSearch.TabIndex = 2;
+            this.gbSearch.TabStop = false;
+            this.gbSearch.Text = "Пошук";
+            // 
+            // cbSearchField
+            // 
+            this.cbSearchField.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbSearchField.FormattingEnabled = true;
+            this.cbSearchField.Location = new System.Drawing.Point(10, 22);
+            this.cbSearchField.Name = "cbSearchField";
+            this.cbSearchField.Size = new System.Drawing.Size(112, 24);
+            this.cbSearchField.TabIndex = 0;
+            // 
+            // txtSearch
+            // 
+            this.txtSearch.Location = new System.Drawing.Point(128, 23);
+            this.txtSearch.Name = "txtSearch";
+            this.txtSearch.Size = new System.Drawing.Size(112, 22);
+            this.txtSearch.TabIndex = 1;
+            // 
+            // btnFind
+            // 
+            this.btnFind.Location = new System.Drawing.Point(10, 54);
+            this.btnFind.Name = "btnFind";
+            this.btnFind.Size = new System.Drawing.Size(112, 28);
+            this.btnFind.TabIndex = 2;
+            this.btnFind.Text = "Знайти";
+            this.btnFind.UseVisualStyleBackColor = true;
+            this.btnFind.Click += new System.EventHandler(this.btnFind_Click);
+            // 
+            // lblFound
+            // 
+            this.lblFound.AutoSize = true;
+            this.lblFound.Location = new System.Drawing.Point(130, 60);
+            this.lblFound.Name = "lblFound";
+            this.lblFound.Size = new System.Drawing.Size(0, 16);
+            this.lblFound.TabIndex = 3;
+            // 
+            // gbSort
+            // 
+            this.gbSort.Controls.Add(this.btnSortAsc);
+            this.gbSort.Controls.Add(this.btnSortDesc);
+            this.gbSort.Location = new System.Drawing.Point(770, 32);
+            this.gbSort.Name = "gbSort";
+            this.gbSort.Size = new System.Drawing.Size(120, 112);
+            this.gbSort.TabIndex = 3;
+            this.gbSort.TabStop = false;
+            this.gbSort.Text = "Сортування";
             // 
             // btnSortAsc
             // 
-            this.btnSortAsc.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.btnSortAsc.Location = new System.Drawing.Point(847, 50);
+            this.btnSortAsc.Location = new System.Drawing.Point(10, 22);
             this.btnSortAsc.Name = "btnSortAsc";
-            this.btnSortAsc.Size = new System.Drawing.Size(97, 37);
-            this.btnSortAsc.TabIndex = 2;
+            this.btnSortAsc.Size = new System.Drawing.Size(100, 28);
+            this.btnSortAsc.TabIndex = 0;
             this.btnSortAsc.Text = "А-Я";
             this.btnSortAsc.UseVisualStyleBackColor = true;
             this.btnSortAsc.Click += new System.EventHandler(this.btnSortAsc_Click);
             // 
-            // txtValue
+            // btnSortDesc
             // 
-            this.txtValue.Location = new System.Drawing.Point(379, 27);
-            this.txtValue.Name = "txtValue";
-            this.txtValue.Size = new System.Drawing.Size(100, 22);
-            this.txtValue.TabIndex = 1;
+            this.btnSortDesc.Location = new System.Drawing.Point(10, 56);
+            this.btnSortDesc.Name = "btnSortDesc";
+            this.btnSortDesc.Size = new System.Drawing.Size(100, 28);
+            this.btnSortDesc.TabIndex = 1;
+            this.btnSortDesc.Text = "Я-А";
+            this.btnSortDesc.UseVisualStyleBackColor = true;
+            this.btnSortDesc.Click += new System.EventHandler(this.btnSortDesc_Click);
             // 
-            // cbField
+            // gbRecord
             // 
-            this.cbField.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbField.FormattingEnabled = true;
-            this.cbField.Location = new System.Drawing.Point(125, 27);
-            this.cbField.Name = "cbField";
-            this.cbField.Size = new System.Drawing.Size(121, 24);
-            this.cbField.TabIndex = 0;
+            this.gbRecord.Controls.Add(this.btnAdd);
+            this.gbRecord.Controls.Add(this.btnDelete);
+            this.gbRecord.Location = new System.Drawing.Point(896, 32);
+            this.gbRecord.Name = "gbRecord";
+            this.gbRecord.Size = new System.Drawing.Size(120, 112);
+            this.gbRecord.TabIndex = 4;
+            this.gbRecord.TabStop = false;
+            this.gbRecord.Text = "Запис";
+            // 
+            // btnAdd
+            // 
+            this.btnAdd.Location = new System.Drawing.Point(10, 22);
+            this.btnAdd.Name = "btnAdd";
+            this.btnAdd.Size = new System.Drawing.Size(100, 28);
+            this.btnAdd.TabIndex = 0;
+            this.btnAdd.Text = "Додати";
+            this.btnAdd.UseVisualStyleBackColor = true;
+            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
+            // 
+            // btnDelete
+            // 
+            this.btnDelete.Location = new System.Drawing.Point(10, 56);
+            this.btnDelete.Name = "btnDelete";
+            this.btnDelete.Size = new System.Drawing.Size(100, 28);
+            this.btnDelete.TabIndex = 1;
+            this.btnDelete.Text = "Видалити";
+            this.btnDelete.UseVisualStyleBackColor = true;
+            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             // 
             // menuOps
             // 
@@ -568,6 +598,14 @@
             this.Text = "BaseTableForm";
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
+            this.gbFilter.ResumeLayout(false);
+            this.gbFilter.PerformLayout();
+            this.gbSearch.ResumeLayout(false);
+            this.gbSearch.PerformLayout();
+            this.gbSort.ResumeLayout(false);
+            this.gbSort.PerformLayout();
+            this.gbRecord.ResumeLayout(false);
+            this.gbRecord.PerformLayout();
             this.menuOps.ResumeLayout(false);
             this.menuOps.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.bindingNavigator1)).EndInit();
@@ -621,7 +659,10 @@
         private System.Windows.Forms.Button btnAdd;
         private System.Windows.Forms.Label lblFound;
         private System.Windows.Forms.ListBox lstConditions;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.GroupBox gbFilter;
+        private System.Windows.Forms.GroupBox gbSearch;
+        private System.Windows.Forms.GroupBox gbSort;
+        private System.Windows.Forms.GroupBox gbRecord;
         private System.Windows.Forms.ComboBox cbOp;
         private System.Windows.Forms.Button btnRemoveCond;
         private System.Windows.Forms.Panel panelEdit;
