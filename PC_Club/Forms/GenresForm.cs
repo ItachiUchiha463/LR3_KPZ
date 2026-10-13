@@ -19,8 +19,7 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new GenreTableAdapter();
-            adapter.Fill(ds.Genre);
-            Bind(ds.Genre, () => adapter.Update(ds.Genre));
+            Bind(ds.Genre, () => adapter.Fill(ds.Genre), () => adapter.Update(ds.Genre));
         }
     }
 }

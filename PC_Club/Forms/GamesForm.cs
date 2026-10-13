@@ -19,9 +19,8 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new GameTableAdapter();
-            adapter.Fill(ds.Game);
-            Bind(ds.Game, () => adapter.Update(ds.Game));
-            AddLookup("genre_id", Lookups.Genres(), "Жанр");
+            Bind(ds.Game, () => adapter.Fill(ds.Game), () => adapter.Update(ds.Game));
+            AddLookup("genre_id", Lookups.Genres, "Жанр");
         }
 
     }

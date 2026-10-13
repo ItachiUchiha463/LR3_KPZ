@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -182,7 +182,14 @@ namespace PC_Club.Forms
 
         private void tabs_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (tabs.SelectedTab == null) return;
             if (tabs.SelectedTab == tabState) RefreshStats();
+
+            var table = tabs.SelectedTab.Tag as BaseTableForm;
+            if (table != null) table.ReloadData(false);
+
+            var query = tabs.SelectedTab.Tag as QueryForm;
+            if (query != null) query.RefreshData();
         }
 
         private void MainForm_Activated(object sender, EventArgs e)

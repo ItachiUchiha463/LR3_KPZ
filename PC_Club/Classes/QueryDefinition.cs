@@ -51,5 +51,6 @@ namespace PC_Club
         public string ConfirmText;
         public string SuccessText;
         public string ResultSql;
+        public string Receipt;
     }
 }

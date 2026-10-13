@@ -19,10 +19,9 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new ComputerTableAdapter();
-            adapter.Fill(ds.Computer);
-            Bind(ds.Computer, () => adapter.Update(ds.Computer));
-            AddLookup("hall_id", Lookups.Halls(), "Зал");
-            AddLookup("status", Lookups.ComputerStatuses(), "Статус");
+            Bind(ds.Computer, () => adapter.Fill(ds.Computer), () => adapter.Update(ds.Computer));
+            AddLookup("hall_id", Lookups.Halls, "Зал");
+            AddLookup("status", Lookups.ComputerStatuses, "Статус");
         }
     }
 }

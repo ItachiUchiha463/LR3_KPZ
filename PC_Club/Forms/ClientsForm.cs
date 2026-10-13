@@ -18,9 +18,8 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new ClientTableAdapter();
-            adapter.Fill(ds.Client);
 
-            Bind(ds.Client, () => adapter.Update(ds.Client),
+            Bind(ds.Client, () => adapter.Fill(ds.Client), () => adapter.Update(ds.Client),
      "last_name", "first_name", "phone", "balance", "birth_date", "registered_at");
             HideInEditor("user_id", "balance");
             dgv.Columns["user_id"].Visible = false;

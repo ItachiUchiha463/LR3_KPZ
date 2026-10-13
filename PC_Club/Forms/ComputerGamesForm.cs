@@ -14,11 +14,10 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new ComputerGameTableAdapter();
-            adapter.Fill(ds.ComputerGame);
-            Bind(ds.ComputerGame, () => adapter.Update(ds.ComputerGame));
+            Bind(ds.ComputerGame, () => adapter.Fill(ds.ComputerGame), () => adapter.Update(ds.ComputerGame));
 
-            AddLookup("computer_id", Lookups.Computers(), "Комп'ютер");
-            AddLookup("game_id", Lookups.GamesOnly(), "Гра");
+            AddLookup("computer_id", Lookups.Computers, "Комп'ютер");
+            AddLookup("game_id", Lookups.GamesOnly, "Гра");
         }
     }
 }

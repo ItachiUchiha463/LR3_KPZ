@@ -19,11 +19,10 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new DepositTableAdapter();
-            adapter.Fill(ds.Deposit);
-            Bind(ds.Deposit, () => adapter.Update(ds.Deposit));
+            Bind(ds.Deposit, () => adapter.Fill(ds.Deposit), () => adapter.Update(ds.Deposit));
             ShowTimeIn("paid_at");
-            AddLookup("client_id", Lookups.Clients(), "Клієнт");
-            AddLookup("employee_id", Lookups.Employees(), "Працівник");
+            AddLookup("client_id", Lookups.Clients, "Клієнт");
+            AddLookup("employee_id", Lookups.Employees, "Працівник");
 
             AddRowAction("Квитанція (Word)", r => Receipts.Print(this, "deposit", Convert.ToInt32(r["deposit_id"]), false));
             AddRowAction("Квитанція (PDF)", r => Receipts.Print(this, "deposit", Convert.ToInt32(r["deposit_id"]), true));

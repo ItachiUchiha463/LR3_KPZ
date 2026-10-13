@@ -20,8 +20,7 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new HallTableAdapter();
-            adapter.Fill(ds.Hall);
-            Bind(ds.Hall, () => adapter.Update(ds.Hall));
+            Bind(ds.Hall, () => adapter.Fill(ds.Hall), () => adapter.Update(ds.Hall));
         }
     }
 }

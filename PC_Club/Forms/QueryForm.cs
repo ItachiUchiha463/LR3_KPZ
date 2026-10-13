@@ -24,6 +24,8 @@ namespace PC_Club.Forms
         private readonly ListBox _filterList = new ListBox { Width = 260, Height = 56 };
         private readonly List<string> _conditions = new List<string>();
         private DataTable _table;
+        private readonly List<Button> _receiptButtons = new List<Button>();
+        private int _receiptId;
 
         public QueryForm(QueryDef q)
         {
@@ -83,6 +85,26 @@ namespace PC_Club.Forms
             _btnRun.Click += (s, e) => Run();
             paramsPanel.Controls.Add(_btnRun);
             AcceptButton = _btnRun;
+
+            if (_q.Receipt != null)
+            {
+                string name = _q.Receipt == "deposit" ? "Квитанція" : "Чек";
+                foreach (bool pdf in new[] { false, true })
+                {
+                    bool asPdf = pdf;
+                    var button = new Button
+                    {
+                        Text = name + (pdf ? " (PDF)" : " (Word)"),
+                        Width = 120,
+                        Height = 30,
+                        Margin = new Padding(3, 21, 3, 3),
+                        Enabled = false
+                    };
+                    button.Click += (s, e) => Receipts.Print(this, _q.Receipt, _receiptId, asPdf);
+                    _receiptButtons.Add(button);
+                    paramsPanel.Controls.Add(button);
+                }
+            }
 
             if (!_q.ShowFilter)
             {
@@ -201,7 +223,13 @@ namespace PC_Club.Forms
                             ValueMember = "id"
                         };
                         combo.DataSource = LoadLookup(p);
-                        _lookupReloads.Add(() => combo.DataSource = LoadLookup(p));
+                        _lookupReloads.Add(() =>
+                        {
+                            object keep = combo.SelectedValue;
+                            combo.DataSource = LoadLookup(p);
+                            if (keep != null) combo.SelectedValue = keep;
+                            if (combo.SelectedIndex < 0) combo.Text = "";
+                        });
 
                         _lookupDefaults.Add(() =>
                         {
@@ -248,6 +276,13 @@ namespace PC_Club.Forms
             base.OnShown(e);
             foreach (Action apply in _lookupDefaults) apply();
             if (_q.AutoRun) Run();
+        }
+
+        public void RefreshData()
+        {
+            if (!Visible) return;
+            foreach (Action reload in _lookupReloads) reload();
+            if (!_q.IsAction && _table != null) Run();
         }
 
         private bool Fail(Control c, string message)
@@ -432,6 +467,12 @@ namespace PC_Club.Forms
 
             MessageBox.Show(string.Format(_q.SuccessText ?? "Виконано. Змінено записів: {0}.", affected, previewCount, output),
                             Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            if (_q.Receipt != null && output != null)
+            {
+                _receiptId = Convert.ToInt32(_q.Receipt == "session" ? values["session_id"] : output);
+                foreach (Button b in _receiptButtons) b.Enabled = true;
+            }
 
             foreach (Action reload in _lookupReloads) reload();
             foreach (Action apply in _lookupDefaults) apply();

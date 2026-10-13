@@ -14,8 +14,7 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new EmployeeTableAdapter();
-            adapter.Fill(ds.Employee);
-            Bind(ds.Employee, () => adapter.Update(ds.Employee));
+            Bind(ds.Employee, () => adapter.Fill(ds.Employee), () => adapter.Update(ds.Employee));
 
             HideInEditor("user_id");
             dgv.Columns["user_id"].Visible = false;

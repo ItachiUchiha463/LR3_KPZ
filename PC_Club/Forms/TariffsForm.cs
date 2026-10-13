@@ -19,8 +19,7 @@ namespace PC_Club.Forms
         {
             var ds = new PCClubDataSet();
             var adapter = new TariffTableAdapter();
-            adapter.Fill(ds.Tariff);
-            Bind(ds.Tariff, () => adapter.Update(ds.Tariff));
+            Bind(ds.Tariff, () => adapter.Fill(ds.Tariff), () => adapter.Update(ds.Tariff));
         }
     }
 }

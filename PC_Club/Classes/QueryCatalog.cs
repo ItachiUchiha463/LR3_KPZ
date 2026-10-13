@@ -280,6 +280,7 @@ WHERE session_id = @session_id;",
                     OutputType = SqlDbType.Decimal,
                     ConfirmText = "Завершити сесію й списати оплату?",
                     SuccessText = "Сесію завершено. Сплачено {2:N2} грн.",
+                    Receipt = "session",
                     ResultSql = @"
 SELECT d.client      AS [Клієнт],
        d.computer    AS [Комп'ютер],
@@ -308,7 +309,8 @@ WHERE d.session_id = @session_id;"
                     Procedure = "sp_TopUp",
                     Output = "deposit_id",
                     ConfirmText = "Зарахувати поповнення?",
-                    SuccessText = "Рахунок поповнено. Квитанція D-{2:000000}.",
+                    SuccessText = "Рахунок поповнено.",
+                    Receipt = "deposit",
                     ResultSql = @"
 SELECT dbo.fn_FullName(last_name, first_name) AS [Клієнт],
        phone   AS [Телефон],

@@ -8,8 +8,10 @@ namespace PC_Club.Forms
     public partial class BaseTableForm : Form
     {
         private DataTable _table;
+        private Action _fill;
         private Action _save;
         private readonly Dictionary<string, DataTable> _lookups = new Dictionary<string, DataTable>();
+        private readonly Dictionary<string, Func<DataTable>> _lookupSources = new Dictionary<string, Func<DataTable>>();
         private readonly Dictionary<string, string> _captions = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _textCols = new Dictionary<string, string>();
         private readonly HashSet<string> _hidden = new HashSet<string>();
@@ -23,6 +25,8 @@ namespace PC_Club.Forms
         private bool _switching;
         private string _lastSearchKey = "";
         private bool _hasRowActions;
+        private bool _reloading;
+        private bool _closed;
 
         public BaseTableForm()
         {
@@ -32,7 +36,11 @@ namespace PC_Club.Forms
             bindingSource1.CurrentChanged += bindingSource1_CurrentChanged;
             bindingSource1.ListChanged += (s, ev) => UpdateCounter();
             FormClosing += BaseTableForm_FormClosing;
+            FormClosed += (s, e) => _closed = true;
 
+            bindingNavigator1.Items.Add(new ToolStripSeparator());
+            bindingNavigator1.Items.Add(new ToolStripButton("Оновити", null, (s, e) => ReloadData(true))
+                                        { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "Завантажити дані з бази знову (F5)" });
             bindingNavigator1.Items.Add(new ToolStripSeparator());
             bindingNavigator1.Items.Add(new ToolStripButton("В Excel", null, (s, e) => TableExport.Export(this, dgv, ExportTitle, true))
                                         { DisplayStyle = ToolStripItemDisplayStyle.Text });
@@ -55,10 +63,12 @@ namespace PC_Club.Forms
             get { return cbSearchField.SelectedValue as string ?? ""; }
         }
 
-        protected void Bind(DataTable table, Action save, params string[] searchFields)
+        protected void Bind(DataTable table, Action fill, Action save, params string[] searchFields)
         {
             _table = table;
+            _fill = fill;
             _save = save;
+            fill();
             bindingSource1.DataSource = table;
 
             dgv.AutoGenerateColumns = true;
@@ -104,9 +114,10 @@ namespace PC_Club.Forms
             UpdateCounter();
         }
 
-        protected void AddLookup(string columnName, DataTable source, string header)
+        protected void AddLookup(string columnName, Func<DataTable> source, string header)
         {
-            _lookups[columnName] = source;
+            _lookupSources[columnName] = source;
+            _lookups[columnName] = source();
             _captions[columnName] = header;
 
             string textCol = columnName + "_txt";
@@ -188,6 +199,86 @@ namespace PC_Club.Forms
 
             foreach (DataGridViewColumn c in dgv.Columns)
                 if (_captions.ContainsKey(c.Name)) c.HeaderText = _captions[c.Name];
+        }
+
+        public void ReloadData(bool manual)
+        {
+            if (_table == null || _editor == null) return;
+            if (_dirty && (!manual || !ConfirmLeave())) return;
+
+            string keyName = _table.PrimaryKey.Length == 1 ? _table.PrimaryKey[0].ColumnName : null;
+            object key = null;
+            if (keyName != null && _shownRow != null &&
+                _shownRow.RowState != DataRowState.Detached && _shownRow.RowState != DataRowState.Deleted)
+                key = _shownRow[keyName];
+
+            _reloading = true;
+            _switching = true;
+            try
+            {
+                foreach (var pair in _lookupSources)
+                    SyncLookup(_lookups[pair.Key], pair.Value());
+
+                bindingSource1.RaiseListChangedEvents = false;
+                _table.Clear();
+                _fill();
+                FillLookupText();
+                bindingSource1.RaiseListChangedEvents = true;
+                bindingSource1.ResetBindings(false);
+
+                if (key != null)
+                {
+                    int pos = bindingSource1.Find(keyName, key);
+                    if (pos >= 0) bindingSource1.Position = pos;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Errors.Friendly(ex), "Не вдалося оновити дані",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            finally
+            {
+                bindingSource1.RaiseListChangedEvents = true;
+                _switching = false;
+                _reloading = false;
+            }
+
+            ClearHighlight();
+            lblFound.Text = "";
+            ShowCurrent();
+            UpdateCounter();
+        }
+
+        private static void SyncLookup(DataTable target, DataTable fresh)
+        {
+            var old = new Dictionary<string, DataRow>();
+            foreach (DataRow r in target.Rows) old[Convert.ToString(r["id"])] = r;
+
+            foreach (DataRow r in fresh.Rows)
+            {
+                string key = Convert.ToString(r["id"]);
+                DataRow existing;
+                if (old.TryGetValue(key, out existing))
+                {
+                    if (!Equals(existing["text"], r["text"])) existing["text"] = r["text"];
+                    old.Remove(key);
+                }
+                else target.Rows.Add(r["id"], r["text"]);
+            }
+
+            foreach (DataRow r in old.Values) target.Rows.Remove(r);
+            target.AcceptChanges();
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.F5)
+            {
+                ReloadData(true);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         protected void HideInEditor(params string[] columns)
@@ -647,8 +738,9 @@ namespace PC_Club.Forms
 
         private void dgv_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
-            MessageBox.Show("Некоректне значення в полі");
             e.ThrowException = false;
+            if (_reloading || _closed) return;
+            MessageBox.Show("Некоректне значення в полі");
         }
 
         private void menuSortAsc_Click(object sender, EventArgs e) { btnSortAsc_Click(sender, e); }
