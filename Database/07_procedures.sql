@@ -1,23 +1,8 @@
-﻿/* Скрипт 7. Функції, збережені процедури й транзакції (ПР7)
-   Запускати після 06_triggers.sql: процедури розраховують на те, що баланс ведуть тригери.
-
-   Створити вручну, як у методичці:
-   PCClub → Programmability (Програмування) → Stored Procedures (Збережені процедури) → ПКМ → New
-   або Functions (Функції) → Scalar-valued / Table-valued → ПКМ → New → замінити шаблон текстом з цього файлу.
-
-   Коди помилок процедур: 50010 (реєстрація), 50030-50039. */
-
-USE PCClub;
+﻿USE PCClub;
 GO
 SET QUOTED_IDENTIFIER ON;
 GO
 
--- ==================== Скалярні функції ====================
-
-/* Вартість сесії - єдине правило для всієї програми:
-   погодинний тариф - за фактичні хвилини;
-   пакет («5 годин», «Нічний») - ціна пакета, навіть якщо клієнт пішов раніше,
-   а понад пакет - ті самі хвилини за ціною пакета (зі знижкою). */
 CREATE OR ALTER FUNCTION dbo.fn_SessionPrice
 (
     @computer_id INT,
@@ -43,7 +28,6 @@ BEGIN
 END;
 GO
 
--- Повних років на дату @on
 CREATE OR ALTER FUNCTION dbo.fn_Age (@birth_date DATE, @on DATE)
 RETURNS INT
 AS
@@ -54,7 +38,6 @@ BEGIN
 END;
 GO
 
--- «Прізвище Ім'я»
 CREATE OR ALTER FUNCTION dbo.fn_FullName (@last_name NVARCHAR(50), @first_name NVARCHAR(50))
 RETURNS NVARCHAR(101)
 AS
@@ -63,9 +46,6 @@ BEGIN
 END;
 GO
 
--- ==================== Табличні функції ====================
-
--- Рух коштів клієнта із залишком після кожної операції
 CREATE OR ALTER FUNCTION dbo.fn_ClientStatement (@client_id INT)
 RETURNS TABLE
 AS
@@ -98,8 +78,6 @@ FROM (SELECT d.paid_at     AS op_date,
         AND s.ended_at IS NOT NULL) ops;
 GO
 
-/* Завантаженість клубу: зайняті й доступні ПК-години по залах, днях тижня і годинах.
-   Дані для звіту «Завантаженість клубу». Сесія розкладається на годинні слоти (до 12 годин). */
 CREATE OR ALTER FUNCTION dbo.fn_ClubLoad (@from DATE, @to DATE)
 RETURNS TABLE
 AS
@@ -171,7 +149,6 @@ FROM capacity cp
 LEFT JOIN busy b ON b.hall = cp.hall AND b.dow = cp.dow AND b.hr = cp.hr;
 GO
 
--- Скільки набіжало у відкритих сесіях тепер рахує fn_SessionPrice (пакет - одразу повна ціна)
 CREATE OR ALTER VIEW dbo.v_ActiveSessions
 AS
 SELECT
@@ -195,9 +172,6 @@ JOIN Client c ON c.client_id = d.client_id
 WHERE d.ended_at IS NULL;
 GO
 
--- ==================== Процедури ====================
-
--- Вибірка сесій з необов'язковими параметрами: NULL означає «без обмеження»
 CREATE OR ALTER PROCEDURE dbo.sp_GetSessions
     @client_id INT  = NULL,
     @from      DATE = NULL,
@@ -221,7 +195,6 @@ BEGIN
 END;
 GO
 
--- Відкрити сесію. Перевірки ПК, зайнятості, гри й віку робить тригер trg_Session_Validate
 CREATE OR ALTER PROCEDURE dbo.sp_StartSession
     @client_id   INT,
     @computer_id INT,
@@ -233,7 +206,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Пакет оплачується наперед: на рахунку має бути щонайменше його ціна
     DECLARE @now DATETIME = GETDATE(), @hours INT, @package DECIMAL(8,2), @balance DECIMAL(8,2), @msg NVARCHAR(400);
     SELECT @hours = hours FROM Tariff WHERE tariff_id = @tariff_id;
     SELECT @balance = balance FROM Client WHERE client_id = @client_id;
@@ -256,7 +228,6 @@ BEGIN
 END;
 GO
 
--- Поповнити рахунок. Баланс збільшить тригер trg_Deposit_Balance
 CREATE OR ALTER PROCEDURE dbo.sp_TopUp
     @client_id   INT,
     @amount      DECIMAL(8,2),
@@ -272,10 +243,6 @@ BEGIN
 END;
 GO
 
-/* Завершити сесію. Одна транзакція з трьох кроків:
-   1) прийняти доплату (якщо є) - тригер збільшить баланс;
-   2) порахувати ціну й закрити сесію - тригер спише гроші;
-   3) якщо грошей не вистачає - відкотити все, включно з доплатою. */
 CREATE OR ALTER PROCEDURE dbo.sp_CloseSession
     @session_id  INT,
     @pay_amount  DECIMAL(8,2) = 0,
@@ -329,7 +296,6 @@ BEGIN
 END;
 GO
 
--- Зареєструвати клієнта: обліковий запис і клієнт створюються разом або не створюються зовсім
 CREATE OR ALTER PROCEDURE dbo.sp_RegisterClient
     @last       NVARCHAR(50),
     @first      NVARCHAR(50),
@@ -371,7 +337,6 @@ BEGIN
 END;
 GO
 
--- Змінити ціни залів на відсоток. @hall_id = 0 або NULL - усі зали
 CREATE OR ALTER PROCEDURE dbo.sp_ChangeHallPrices
     @hall_id INT = NULL,
     @percent DECIMAL(6,2)
@@ -399,9 +364,6 @@ BEGIN
 END;
 GO
 
--- ==================== Перевірка ====================
-
--- Скалярні функції викликаються в SELECT
 SELECT dbo.fn_FullName(last_name, first_name)        AS [Клієнт],
        birth_date                                    AS [Дата народження],
        dbo.fn_Age(birth_date, CAST(GETDATE() AS DATE)) AS [Вік]
@@ -412,11 +374,9 @@ SELECT t.name AS [Тариф],
        dbo.fn_SessionPrice(1, t.tariff_id, '20250101 10:00', '20250101 12:00') AS [2 години в залі Стандарт (грн)]
 FROM Tariff t;
 
--- Таблична функція викликається у FROM
 SELECT TOP 10 * FROM dbo.fn_ClientStatement(1) ORDER BY op_date DESC;
 SELECT TOP 5 * FROM dbo.fn_ClubLoad(DATEADD(DAY, -7, CAST(GETDATE() AS DATE)), CAST(GETDATE() AS DATE));
 
--- Процедура з необов'язковими параметрами
 EXEC dbo.sp_GetSessions @client_id = 1;
 DECLARE @week_ago DATE = DATEADD(DAY, -7, GETDATE());
 EXEC dbo.sp_GetSessions @from = @week_ago;

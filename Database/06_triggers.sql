@@ -1,21 +1,8 @@
-﻿/* Скрипт 6. Тригери (ПР6)
-   Запускати після 01, 02, 03: тригери ставляться на вже заповнену базу,
-   інакше генератор даних списав би баланс двічі.
-
-   Тригер можна створити й вручну, як у методичці:
-   PCClub → Tables → dbo.Session → Triggers (Тригери) → ПКМ → New Trigger (Створити тригер)
-   → замінити шаблон текстом тригера з цього файлу → Execute (F5).
-
-   Коди помилок тригерів: 50020-50029. Програма показує їхній текст як є. */
-
-USE PCClub;
+﻿USE PCClub;
 GO
 SET QUOTED_IDENTIFIER ON;
 GO
 
--- ---------- Зміни схеми ----------
-
--- Клієнта з історією сесій чи поповнень видалити не можна: інакше зникли б гроші у звітах
 ALTER TABLE Session DROP CONSTRAINT FK_Session_Client;
 ALTER TABLE Session ADD CONSTRAINT FK_Session_Client FOREIGN KEY (client_id) REFERENCES Client (client_id)
     ON UPDATE NO ACTION ON DELETE NO ACTION;
@@ -24,13 +11,10 @@ ALTER TABLE Deposit ADD CONSTRAINT FK_Deposit_Client FOREIGN KEY (client_id) REF
     ON UPDATE NO ACTION ON DELETE NO ACTION;
 GO
 
--- Індекси для перевірки перетину сесій у trg_Session_Validate
 CREATE INDEX IX_Session_Computer ON Session (computer_id, started_at);
 CREATE INDEX IX_Session_Client   ON Session (client_id, started_at);
 GO
 
-/* Журнал змін. changed_by: програма передає логін користувача в Application Name
-   підключення («PC_Club:admin»), для змін з SSMS записується обліковий запис Windows. */
 CREATE TABLE ChangeLog (
     log_id     INT IDENTITY PRIMARY KEY,
     changed_at DATETIME      NOT NULL CONSTRAINT DF_ChangeLog_at DEFAULT GETDATE(),
@@ -44,10 +28,6 @@ CREATE TABLE ChangeLog (
 );
 GO
 
--- ---------- 1. Баланс клієнта ----------
--- Правило: баланс = сума поповнень - сума оплачених сесій. Його ведуть два тригери нижче.
-
--- Поповнення: баланс += нова сума - стара сума (працює і для зміни, і для видалення)
 CREATE OR ALTER TRIGGER trg_Deposit_Balance ON Deposit
 AFTER INSERT, UPDATE, DELETE
 AS
@@ -76,7 +56,6 @@ BEGIN
 END;
 GO
 
--- Сесії: баланс -= нова сума + стара сума (видалення сесії повертає гроші)
 CREATE OR ALTER TRIGGER trg_Session_Charge ON Session
 AFTER INSERT, UPDATE, DELETE
 AS
@@ -112,9 +91,6 @@ BEGIN
 END;
 GO
 
-/* Баланс вручну не змінюється. Якщо змінити його напряму (у таблиці «Клієнти» чи UPDATE у SSMS),
-   тригер поверне попереднє значення. Зміни з тригерів поповнень і сесій мають рівень вкладеності 2
-   і проходять. Новий клієнт завжди починає з нульового балансу. */
 CREATE OR ALTER TRIGGER trg_Client_Balance ON Client
 AFTER INSERT, UPDATE
 AS
@@ -130,7 +106,6 @@ BEGIN
 END;
 GO
 
--- ---------- 2. Перевірка сесії ----------
 CREATE OR ALTER TRIGGER trg_Session_Validate ON Session
 AFTER INSERT, UPDATE
 AS
@@ -138,7 +113,6 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @msg NVARCHAR(400);
 
-    -- Закрити сесію можна лише разом із сумою, а суму має лише закрита сесія
     IF EXISTS (SELECT 1 FROM inserted
                WHERE (ended_at IS NULL AND total_price IS NOT NULL)
                   OR (ended_at IS NOT NULL AND total_price IS NULL))
@@ -147,7 +121,6 @@ BEGIN
         THROW 50022, N'Сесію треба завершувати разом із сумою оплати. Скористайтеся операцією «Завершити сесію».', 1;
     END;
 
-    -- Новий ПК для відкритої сесії має бути справним
     SELECT TOP 1 @msg = N'Комп''ютер ' + h.name + N' #' + CAST(c.number AS NVARCHAR(10)) + N' несправний.'
     FROM inserted i
     LEFT JOIN deleted d ON d.session_id = i.session_id
@@ -162,7 +135,6 @@ BEGIN
         THROW 50023, @msg, 1;
     END;
 
-    -- На одному ПК не можуть одночасно йти дві сесії (відкрита сесія триває «до нескінченності»)
     SELECT TOP 1 @msg = N'Комп''ютер ' + h.name + N' #' + CAST(c.number AS NVARCHAR(10))
                       + N' у цей час зайнятий (сесія № ' + CAST(s.session_id AS NVARCHAR(10)) + N').'
     FROM inserted i
@@ -177,7 +149,6 @@ BEGIN
         THROW 50024, @msg, 1;
     END;
 
-    -- Клієнт не може одночасно грати за двома ПК
     SELECT TOP 1 @msg = N'Клієнт ' + cl.last_name + N' ' + cl.first_name
                       + N' у цей час уже грає (сесія № ' + CAST(s.session_id AS NVARCHAR(10)) + N').'
     FROM inserted i
@@ -191,7 +162,6 @@ BEGIN
         THROW 50025, @msg, 1;
     END;
 
-    -- Гра має бути встановлена на цьому ПК і дозволена клієнту за віком на день сесії
     SELECT TOP 1 @msg = N'Гра «' + g.title + N'» не встановлена на вибраному комп''ютері.'
     FROM inserted i
     LEFT JOIN deleted d ON d.session_id = i.session_id
@@ -225,9 +195,6 @@ BEGIN
 END;
 GO
 
--- ---------- 3. Обліковий запис клієнта ----------
-
--- Логін клієнта = номер телефону: змінився телефон - змінюється й логін
 CREATE OR ALTER TRIGGER trg_Client_PhoneLogin ON Client
 AFTER UPDATE
 AS
@@ -244,7 +211,6 @@ BEGIN
 END;
 GO
 
--- Видалили клієнта - видаляється і його обліковий запис
 CREATE OR ALTER TRIGGER trg_Client_Delete ON Client
 AFTER DELETE
 AS
@@ -255,10 +221,6 @@ BEGIN
     JOIN deleted d ON d.user_id = ua.user_id;
 END;
 GO
-
--- ---------- 4. Журнал змін (аудит) ----------
--- Старі й нові значення рядка пишуться у форматі JSON. Нові значення читаються з таблиці,
--- тож у журнал потрапляє те, що реально збережено (наприклад, після trg_Client_Balance).
 
 CREATE OR ALTER TRIGGER trg_Audit_Client ON Client
 AFTER INSERT, UPDATE, DELETE
@@ -324,12 +286,10 @@ BEGIN
 END;
 GO
 
--- Спершу повертається баланс, потім пишеться журнал, щоб у нього потрапило збережене значення
 EXEC sp_settriggerorder @triggername = N'trg_Client_Balance', @order = N'First', @stmttype = N'UPDATE';
 EXEC sp_settriggerorder @triggername = N'trg_Client_Balance', @order = N'First', @stmttype = N'INSERT';
 GO
 
--- Журнал з назвами українською
 CREATE OR ALTER VIEW dbo.v_ChangeLog
 AS
 SELECT l.log_id,
@@ -358,7 +318,6 @@ SELECT l.log_id,
 FROM ChangeLog l;
 GO
 
--- ---------- Перевірка ----------
 SELECT t.name AS [Тригер], OBJECT_NAME(t.parent_id) AS [Таблиця]
 FROM sys.triggers t
 ORDER BY [Таблиця], [Тригер];
