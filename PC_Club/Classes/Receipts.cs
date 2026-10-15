@@ -102,7 +102,6 @@ WHERE d.deposit_id = @id;", Db.P("@id", depositId));
                 doc.Pair("Баланс рахунку:", Money(r["balance"]));
                 doc.Pair("Прийняв:", Convert.ToString(r["employee"]));
                 doc.Separator();
-                doc.Line("Дякуємо, що граєте з нами!", center: true);
                 doc.Save(path);
             }
         }
